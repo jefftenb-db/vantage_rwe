@@ -2,124 +2,589 @@
 
 **Commercial Intelligence from Real-World Evidence**
 
-A comprehensive platform for pharmaceutical commercial teams to analyze real-world healthcare data from OHDSI OMOP Common Data Model (CDM) within Databricks.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![React 18](https://img.shields.io/badge/react-18-blue.svg)](https://reactjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
 
-## Features
+A comprehensive commercial intelligence platform for pharmaceutical teams to analyze real-world healthcare data using the OHDSI OMOP Common Data Model (CDM) on Databricks.
+
+---
+
+## 🎯 Overview
+
+**Vantage RWE** transforms healthcare data into actionable commercial insights for pharmaceutical companies. Built on the industry-standard OMOP CDM and powered by Databricks, it provides three integrated analytics modules:
+
+- **📊 Patient Cohort Analytics** - Build and analyze patient populations
+- **👨‍⚕️ Prescriber Analytics** - Target high-value healthcare providers
+- **📈 Market Share Intelligence** - Track competitive positioning and trends
+
+Perfect for brand teams, sales operations, commercial analytics, and medical affairs.
+
+---
+
+## ✨ Key Features
 
 ### 📊 **Patient Cohort Analytics**
-- **Interactive Cohort Building**: Define patient populations based on:
-  - Medical conditions (CONDITION_OCCURRENCE)
-  - Drug exposures (DRUG_EXPOSURE)
-  - Procedures (PROCEDURE_OCCURRENCE)
-  - Visits (VISIT_OCCURRENCE)
-  - Observations (OBSERVATION)
-- **GenAI Natural Language Queries**: Use Databricks AI to query data with natural language
-- **Real-time Results**: See cohort counts and demographics instantly
+
+Build sophisticated patient cohorts using multiple clinical criteria:
+
+- **Interactive Cohort Builder**
+  - Define inclusion/exclusion criteria
+  - Medical conditions, drug exposures, procedures, visits, observations
+  - Date ranges and occurrence counts
+  - Boolean logic (AND/OR combinations)
+
+- **AI-Powered Natural Language Queries**
+  - Ask questions in plain English using Databricks Genie
+  - Example: "Show me Type 2 Diabetes patients prescribed Metformin in 2023"
+  - Automatically generates SQL and cohort definitions
+
+- **Real-Time Analytics**
+  - Instant patient counts and demographics
+  - Age/gender distribution
+  - Sample patient IDs for validation
+
+**Use Cases:**
+- Clinical trial recruitment feasibility
+- Market sizing for new indications
+- Real-world evidence study populations
+- Patient journey analysis
+
+---
 
 ### 👨‍⚕️ **Prescriber Analytics**
-- **Prescriber Search & Profiling**: Find and rank prescribers by volume
-- **Drug Prescriber Analytics**: Identify top prescribers and market concentration
-- **Prescriber Targeting**: Discover high-value HCPs prescribing competitors
-- **Treatment Pathways**: Understand prescriber behavior and drug sequences
+
+Identify and target high-value healthcare providers:
+
+#### **Prescriber Search & Profiling**
+- Search by specialty, patient volume, drug prescribed
+- Rank prescribers by volume with percentile/decile rankings
+- View prescriber profiles with aggregate metrics
+
+#### **Drug Prescriber Analytics**
+- Top prescribers by drug with market share
+- Market concentration metrics (HHI, top 10%, top 20%)
+- Prescriber distribution analysis
+
+#### **Prescriber Targeting** 🎯
+- **AI-powered targeting algorithm**
+- Identifies HCPs who:
+  - Treat relevant patient populations
+  - Prescribe competitor drugs
+  - Have low/no adoption of your drug
+- Prioritized target lists (High/Medium/Low)
+- Opportunity scoring and estimated potential
+
+#### **Treatment Pathway Analysis**
+- First-line drug preferences by prescriber
+- Drug switching patterns (Drug A → Drug B)
+- Treatment sequences and algorithms
+
+**Use Cases:**
+- Sales force targeting and territory planning
+- Key opinion leader (KOL) identification
+- Market access strategy
+- Competitive intelligence
+
+**Key Metrics:**
+- Prescriber volume rankings (deciles/percentiles)
+- Market share by prescriber
+- Target opportunity scores
+- Switch analysis
+
+---
 
 ### 📈 **Market Share Intelligence**
-- **Market Share Analysis**: Distribution, concentration, and HHI metrics
-- **Trend Analysis**: Historical market share tracking over time
-- **Competitive Positioning**: Your position vs. competitors
-- **New-to-Brand (NBx)**: Patient acquisition and switch analysis
 
-## Architecture
+Comprehensive competitive intelligence and market dynamics:
+
+#### **Market Share Overview**
+- Market share by drug (prescriptions & patients)
+- Market concentration (HHI, top 3/5 share)
+- Rank ordering and visual distribution
+- Herfindahl-Hirschman Index calculation
+
+#### **Trend Analysis**
+- Historical market share tracking
+- Monthly, quarterly, or yearly views
+- Period-over-period growth rates
+- Peak share identification
+- Trend direction (growing/declining/stable)
+
+#### **Competitive Positioning**
+- Head-to-head comparisons with competitors
+- Share gap to market leader
+- Relative ranking visualization
+- Competitive landscape overview
+
+#### **New-to-Brand (NBx) Analysis**
+- New patient acquisition tracking
+- Treatment-naive vs. switchers
+- Source analysis (which competitor drugs)
+- NBx rate calculations
+- Switch pattern identification
+
+**Use Cases:**
+- Market access and pricing decisions
+- Sales forecasting and planning
+- Competitive strategy development
+- Board/investor presentations
+- Launch planning and tracking
+
+**Key Metrics:**
+- Market share % (by Rx and patients)
+- HHI (market concentration)
+- NBx rate and sources
+- Share gap to leader
+- Growth rates (period-over-period)
+
+---
+
+## 🏗️ Architecture
+
+### Technology Stack
+
+**Backend:**
+- **FastAPI** - Modern Python web framework
+- **Pydantic** - Data validation
+- **Databricks SQL Connector** - Database connectivity
+- **SQLAlchemy-style** queries for OMOP CDM
+
+**Frontend:**
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Axios** - API client
+- **CSS3** - Responsive styling
+
+**Data:**
+- **OMOP CDM 5.4** - Standardized healthcare data model
+- **Databricks** - Data platform (SQL Warehouse or Cluster)
+- **OHDSI Vocabularies** - Standardized medical terminologies
+
+### System Architecture
 
 ```
-├── backend/              # FastAPI backend
+┌─────────────────────────────────────────────────────────────┐
+│                      Frontend (React)                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │   Cohort     │  │  Prescriber  │  │ Market Share │     │
+│  │   Builder    │  │  Analytics   │  │  Analytics   │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘     │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │   REST API     │
+                    │   (FastAPI)    │
+                    └───────┬────────┘
+                            │
+         ┌──────────────────┼──────────────────┐
+         │                  │                  │
+    ┌────▼─────┐    ┌──────▼──────┐    ┌─────▼──────┐
+    │  Cohort  │    │  Prescriber │    │   Market   │
+    │  Service │    │   Service   │    │   Share    │
+    └────┬─────┘    └──────┬──────┘    └─────┬──────┘
+         │                  │                  │
+         └──────────────────┼──────────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │   Databricks   │
+                    │   OMOP CDM     │
+                    └────────────────┘
+```
+
+### Project Structure
+
+```
+vantage-rwe/
+├── backend/                      # Python/FastAPI backend
 │   ├── app/
-│   │   ├── api/         # API endpoints
-│   │   ├── models/      # Pydantic models
-│   │   ├── services/    # Business logic
-│   │   └── db/          # Database connections
+│   │   ├── api/
+│   │   │   └── routes.py        # API endpoints
+│   │   ├── models/
+│   │   │   ├── cohort.py        # Cohort models
+│   │   │   ├── prescriber.py    # Prescriber models
+│   │   │   └── market_share.py  # Market share models
+│   │   ├── services/
+│   │   │   ├── cohort_builder.py
+│   │   │   ├── prescriber_service.py
+│   │   │   ├── market_share_service.py
+│   │   │   ├── omop_service.py
+│   │   │   └── genai_service.py # Databricks Genie integration
+│   │   ├── db/
+│   │   │   └── databricks.py    # Database connection
+│   │   ├── config.py            # Configuration
+│   │   └── main.py              # FastAPI app
 │   └── requirements.txt
-├── frontend/            # React frontend
+│
+├── frontend/                     # React/TypeScript frontend
 │   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── services/    # API clients
-│   │   └── App.tsx
+│   │   ├── components/
+│   │   │   ├── CohortBuilder.tsx
+│   │   │   ├── PrescriberAnalytics.tsx
+│   │   │   ├── MarketShareAnalytics.tsx
+│   │   │   └── NaturalLanguageSearch.tsx
+│   │   ├── services/
+│   │   │   └── api.ts           # API client
+│   │   ├── App.tsx
+│   │   └── index.tsx
 │   └── package.json
-└── config/              # Configuration files
+│
+└── docs/                         # Documentation
+    ├── PRESCRIBER_ANALYTICS.md
+    ├── MARKET_SHARE_ANALYTICS.md
+    ├── BRANCH_GUIDE.md
+    └── QUICKSTART.md
 ```
 
-## Setup
+---
+
+## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.9+
-- Node.js 18+
-- Databricks workspace with OMOP CDM data
-- Databricks SQL Warehouse or Cluster
+- **Python 3.9+** with pip
+- **Node.js 18+** with npm
+- **Databricks workspace** with:
+  - OMOP CDM data loaded
+  - SQL Warehouse or Cluster running
+  - Personal Access Token
 
-### Backend Setup
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/jefftenb-db/vantage_rwe.git
+cd vantage_rwe
+```
+
+### 2. Backend Setup
 
 ```bash
 cd backend
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
-cp .env.example .env
+
+# Configure environment
+cp env.template .env
 # Edit .env with your Databricks credentials
+
+# Run the API server
 uvicorn app.main:app --reload
 ```
 
-### Frontend Setup
+API will be available at **http://localhost:8000**  
+API Documentation at **http://localhost:8000/docs**
+
+### 3. Frontend Setup
 
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Configure environment (optional)
+cp env.template .env
+# Edit REACT_APP_API_URL if backend is not on localhost:8000
+
+# Start development server
 npm start
 ```
 
-### Environment Variables
+Application will open at **http://localhost:3000**
 
-Create a `.env` file in the backend directory:
+### 4. Access the Application
+
+Open your browser to **http://localhost:3000** and explore:
+- **Cohort Builder** tab - Build patient populations
+- **GenAI Query** tab - Natural language search
+- **Prescriber Analytics** tab - HCP targeting and analysis
+- **Market Share** tab - Competitive intelligence
+
+---
+
+## ⚙️ Configuration
+
+### Backend Environment Variables
+
+Create `backend/.env` file:
 
 ```env
+# Databricks Connection
 DATABRICKS_HOST=your-workspace.cloud.databricks.com
-DATABRICKS_TOKEN=your-access-token
-DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/xxxxx
+DATABRICKS_TOKEN=dapi1234567890abcdef
+DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/abc123xyz789
+
+# OMOP Schema
 OMOP_CATALOG=hive_metastore
 OMOP_SCHEMA=omop_cdm
+
+# Optional: Databricks Genie
+DATABRICKS_GENIE_SPACE_ID=your-genie-space-id
+
+# API Configuration
+API_HOST=0.0.0.0
+API_PORT=8000
+CORS_ORIGINS=http://localhost:3000
+
+# SSL (if needed)
+DATABRICKS_VERIFY_SSL=true
 ```
 
-## Usage
+### Frontend Environment Variables
 
-1. **Start with a base population**: Define initial criteria (e.g., all patients with diabetes)
-2. **Add inclusion criteria**: Filter by drug exposures, procedures, or visits
-3. **Add exclusion criteria**: Remove patients based on conditions
-4. **Use GenAI**: Ask questions like "Show me patients with Type 2 Diabetes who were prescribed Metformin"
-5. **Review results**: See patient counts and demographics
-6. **Export**: Download patient IDs or save cohort definition
+Create `frontend/.env` (optional):
 
-## OMOP CDM Tables Used
+```env
+REACT_APP_API_URL=http://localhost:8000/api/v1
+```
 
-- **PERSON**: Demographics and basic patient info
-- **CONDITION_OCCURRENCE**: Diagnoses and medical conditions
-- **DRUG_EXPOSURE**: Medication prescriptions and administrations
-- **PROCEDURE_OCCURRENCE**: Medical procedures performed
-- **VISIT_OCCURRENCE**: Healthcare visits (inpatient, outpatient, ER)
-- **OBSERVATION**: Lab results and clinical observations
-- **CONCEPT**: Standardized medical vocabularies
+---
 
-## Development
+## 📚 Usage Examples
 
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
-- Frontend: http://localhost:3000
+### Example 1: Build a Diabetes Cohort
 
-## Who Is This For?
+1. Go to **Cohort Builder** tab
+2. Name: "Type 2 Diabetes Patients on Metformin"
+3. **Add Inclusion Criteria**:
+   - Type: Condition
+   - Search: "Type 2 Diabetes"
+   - Select concepts (201826, 443238)
+4. **Add Inclusion Criteria**:
+   - Type: Drug
+   - Search: "Metformin"
+   - Select concepts (1503297)
+5. Click **Build Cohort**
+6. View patient count and demographics
 
-**Vantage RWE** is built for pharmaceutical commercial teams:
-- 💼 **Brand Teams**: Track market share and competitive position
-- 🎯 **Sales Operations**: Identify and target high-value prescribers
-- 📊 **Commercial Analytics**: Generate real-world evidence insights
-- 🔬 **Medical Affairs**: Understand treatment patterns and patient journeys
+### Example 2: Target High-Value Prescribers
 
-## License
+1. Go to **Prescriber Analytics** → **Targeting** tab
+2. Enter Target Drug IDs (your drug)
+3. Enter Competitor Drug IDs
+4. Click **Identify Targets**
+5. Review prioritized list with opportunity scores
+6. Export for CRM/sales planning
 
-MIT
+### Example 3: Analyze Market Share Trends
 
+1. Go to **Market Share** → **Trends** tab
+2. Search for your drug
+3. Select time granularity (monthly/quarterly)
+4. Click **Get Trends**
+5. View historical market share changes
+6. Identify growth periods and patterns
+
+### Example 4: Natural Language Query
+
+1. Go to **GenAI Query** tab
+2. Type: "Show me patients with heart failure prescribed ACE inhibitors"
+3. Click **Search**
+4. View generated SQL and results
+5. Refine and export
+
+---
+
+## 🔌 API Endpoints
+
+### Cohort Endpoints
+- `POST /api/v1/cohorts/build` - Build cohort
+- `POST /api/v1/concepts/search` - Search OMOP concepts
+- `POST /api/v1/genai/query` - Natural language query
+
+### Prescriber Endpoints
+- `GET /api/v1/prescribers/{id}` - Get prescriber profile
+- `POST /api/v1/prescribers/search` - Search prescribers
+- `GET /api/v1/prescribers/drug/{id}/analytics` - Drug prescriber analytics
+- `POST /api/v1/prescribers/targeting` - Identify targets
+- `GET /api/v1/prescribers/{id}/treatment-pathways` - Treatment pathways
+
+### Market Share Endpoints
+- `POST /api/v1/market-share/analysis` - Market share overview
+- `GET /api/v1/market-share/trends/{id}` - Trend analysis
+- `GET /api/v1/market-share/competitive/{id}` - Competitive positioning
+- `GET /api/v1/market-share/new-to-brand/{id}` - NBx analysis
+- `POST /api/v1/market-share/geographic` - Geographic breakdown
+
+**Full API Documentation**: http://localhost:8000/docs
+
+---
+
+## 📊 OMOP CDM Tables
+
+The platform leverages these OMOP tables:
+
+| Table | Purpose |
+|-------|---------|
+| **PERSON** | Patient demographics |
+| **CONDITION_OCCURRENCE** | Diagnoses and medical conditions |
+| **DRUG_EXPOSURE** | Medication prescriptions |
+| **PROCEDURE_OCCURRENCE** | Medical procedures |
+| **VISIT_OCCURRENCE** | Healthcare visits |
+| **OBSERVATION** | Lab results and measurements |
+| **PROVIDER** | Healthcare provider information |
+| **CARE_SITE** | Healthcare facility information |
+| **LOCATION** | Geographic data |
+| **CONCEPT** | Standardized vocabularies |
+
+**OMOP Version**: 5.4  
+**Vocabularies**: SNOMED-CT, RxNorm, ICD-10-CM, CPT4, LOINC
+
+---
+
+## 🎓 Documentation
+
+- **[Quick Start Guide](./QUICKSTART.md)** - Get running in 5 minutes
+- **[Setup Guide](./SETUP_GUIDE.md)** - Detailed installation
+- **[Architecture](./ARCHITECTURE.md)** - System design details
+- **[Prescriber Analytics](./PRESCRIBER_ANALYTICS.md)** - HCP targeting guide
+- **[Market Share Analytics](./MARKET_SHARE_ANALYTICS.md)** - Competitive intelligence guide
+- **[Branch Guide](./BRANCH_GUIDE.md)** - Git branch navigation
+- **[Example Cohorts](./EXAMPLE_COHORTS.md)** - Sample queries
+
+---
+
+## 🌳 Repository Branches
+
+This repository uses feature branches for independent module management:
+
+- **`main`** - Baseline cohort builder
+- **`feature/prescriber-analytics`** - Adds prescriber analytics
+- **`feature/market-share-analysis`** - Full suite (recommended)
+
+See [BRANCH_GUIDE.md](./BRANCH_GUIDE.md) for details.
+
+---
+
+## 💼 Who Is This For?
+
+**Vantage RWE** is purpose-built for pharmaceutical commercial teams:
+
+### **Brand Teams**
+- Track market share vs. competitors
+- Understand patient flows and switches
+- Support pricing and market access decisions
+- Generate board-ready insights
+
+### **Sales Operations**
+- Identify high-value prescriber targets
+- Territory planning and resource allocation
+- Sales force effectiveness measurement
+- CRM data enrichment
+
+### **Commercial Analytics**
+- Real-world evidence generation
+- Market landscape analysis
+- Forecasting and scenario modeling
+- Ad-hoc business intelligence
+
+### **Medical Affairs**
+- Treatment pattern analysis
+- Physician behavior insights
+- KOL identification
+- Evidence generation for publications
+
+---
+
+## 🛠️ Development
+
+### Running Tests
+
+```bash
+# Backend tests
+cd backend
+pytest
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+### Code Quality
+
+```bash
+# Python linting
+cd backend
+flake8 app/
+black app/
+
+# TypeScript linting
+cd frontend
+npm run lint
+```
+
+### Building for Production
+
+```bash
+# Frontend build
+cd frontend
+npm run build
+
+# Backend with gunicorn
+cd backend
+gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
+```
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **OHDSI Community** - For the OMOP Common Data Model standard
+- **Databricks** - For the data platform and Genie AI capabilities
+- **FastAPI & React** - For excellent frameworks
+
+---
+
+## 📞 Support
+
+- **Documentation**: See `/docs` folder
+- **Issues**: [GitHub Issues](https://github.com/jefftenb-db/vantage_rwe/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/jefftenb-db/vantage_rwe/discussions)
+
+---
+
+## 🗺️ Roadmap
+
+**Upcoming Features:**
+- [ ] Geographic heatmaps and visualizations
+- [ ] Export to PowerBI/Tableau
+- [ ] Automated email reports
+- [ ] Patient journey Sankey diagrams
+- [ ] Predictive analytics (ML models)
+- [ ] Multi-tenant support
+- [ ] RBAC (Role-Based Access Control)
+- [ ] Audit logging and compliance features
+
+---
+
+<p align="center">
+  <strong>Vantage RWE</strong> - Transforming Healthcare Data into Commercial Intelligence
+</p>
+
+<p align="center">
+  Made with ❤️ for Pharmaceutical Commercial Teams
+</p>
