@@ -1,4 +1,6 @@
-# OMOP Cohort Builder - Setup Guide
+# Vantage RWE - Setup Guide
+
+**Commercial Intelligence from Real-World Evidence**
 
 This guide will walk you through setting up the OMOP Cohort Builder application from scratch.
 

@@ -1,4 +1,6 @@
-# OMOP Cohort Builder - Architecture
+# Vantage RWE - Architecture
+
+**Commercial Intelligence from Real-World Evidence**
 
 ## System Overview
 

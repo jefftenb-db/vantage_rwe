@@ -1,6 +1,8 @@
-# Quick Start Guide
+# Quick Start Guide - Vantage RWE
 
-Get up and running with OMOP Cohort Builder in 5 minutes!
+**Commercial Intelligence from Real-World Evidence**
+
+Get up and running with Vantage RWE in 5 minutes!
 
 ## 1. Prerequisites Check
 

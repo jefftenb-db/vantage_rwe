@@ -1,6 +1,8 @@
-# Databricks Genie API Integration
+# Databricks Genie API Integration - Vantage RWE
 
-This document explains how the Databricks Genie Conversation API is integrated into the OMOP Cohort Builder.
+**Commercial Intelligence from Real-World Evidence**
+
+This document explains how the Databricks Genie Conversation API is integrated into Vantage RWE.
 
 ## Overview
 

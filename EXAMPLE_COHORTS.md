@@ -1,6 +1,6 @@
 # Example Cohort Definitions
 
-This document provides example cohort definitions you can use as templates or for testing the OMOP Cohort Builder.
+This document provides example cohort definitions you can use as templates or for testing Vantage RWE.
 
 ## Basic Cohorts
 

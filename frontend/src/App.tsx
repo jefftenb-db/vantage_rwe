@@ -12,8 +12,8 @@ function App() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1>🏥 Cohort Builder</h1>
-        <p className="subtitle">Interactive Patient Cohort Creation from Healthcare Data</p>
+        <h1>📊 Vantage RWE</h1>
+        <p className="subtitle">Commercial Intelligence from Real-World Evidence</p>
       </header>
 
       <div className="container">

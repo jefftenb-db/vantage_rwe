@@ -1,8 +1,10 @@
-# Market Share Analytics Feature
+# Market Share Analytics Feature - Vantage RWE
+
+**Commercial Intelligence from Real-World Evidence**
 
 ## Overview
 
-The Market Share Analytics module provides comprehensive competitive intelligence and market dynamics analysis for pharmaceutical commercial teams. Track market position, analyze trends, understand competitive landscape, and identify growth opportunities.
+The Market Share Analytics module in Vantage RWE provides comprehensive competitive intelligence and market dynamics analysis for pharmaceutical commercial teams. Track market position, analyze trends, understand competitive landscape, and identify growth opportunities.
 
 ## 🎯 Key Capabilities
 

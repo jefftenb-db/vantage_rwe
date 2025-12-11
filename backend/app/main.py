@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="OMOP Cohort Builder API",
-    description="API for building patient cohorts from OHDSI OMOP Common Data Model",
-    version="1.0.0",
+    title="Vantage RWE API",
+    description="Commercial Intelligence from Real-World Evidence - API for pharmaceutical commercial analytics using OHDSI OMOP Common Data Model",
+    version="2.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -37,7 +37,7 @@ app.include_router(router, prefix="/api/v1")
 @app.on_event("startup")
 async def startup_event():
     """Run on application startup."""
-    logger.info("Starting OMOP Cohort Builder API")
+    logger.info("Starting Vantage RWE API")
     logger.info(f"OMOP Schema: {settings.omop_full_schema}")
     logger.info(f"Databricks Host: {settings.databricks_host}")
 
@@ -45,15 +45,16 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Run on application shutdown."""
-    logger.info("Shutting down OMOP Cohort Builder API")
+    logger.info("Shutting down Vantage RWE API")
 
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "service": "OMOP Cohort Builder API",
-        "version": "1.0.0",
+        "service": "Vantage RWE API",
+        "tagline": "Commercial Intelligence from Real-World Evidence",
+        "version": "2.0.0",
         "docs": "/docs",
         "health": "/api/v1/health"
     }

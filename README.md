@@ -1,19 +1,32 @@
-# OMOP Cohort Builder
+# Vantage RWE
 
-An interactive application for creating patient cohorts from healthcare data stored in OHDSI OMOP Common Data Model (CDM) format within Databricks.
+**Commercial Intelligence from Real-World Evidence**
+
+A comprehensive platform for pharmaceutical commercial teams to analyze real-world healthcare data from OHDSI OMOP Common Data Model (CDM) within Databricks.
 
 ## Features
 
-- 🏥 **OMOP CDM Integration**: Work with standardized healthcare data
-- 🔍 **Interactive Cohort Building**: Define patient populations based on:
+### 📊 **Patient Cohort Analytics**
+- **Interactive Cohort Building**: Define patient populations based on:
   - Medical conditions (CONDITION_OCCURRENCE)
   - Drug exposures (DRUG_EXPOSURE)
   - Procedures (PROCEDURE_OCCURRENCE)
   - Visits (VISIT_OCCURRENCE)
   - Observations (OBSERVATION)
-- 🤖 **GenAI Natural Language Queries**: Use Databricks AI to query data with natural language
-- 📊 **Real-time Results**: See cohort counts and demographics instantly
-- 💾 **Save & Export**: Save cohort definitions and export patient lists
+- **GenAI Natural Language Queries**: Use Databricks AI to query data with natural language
+- **Real-time Results**: See cohort counts and demographics instantly
+
+### 👨‍⚕️ **Prescriber Analytics**
+- **Prescriber Search & Profiling**: Find and rank prescribers by volume
+- **Drug Prescriber Analytics**: Identify top prescribers and market concentration
+- **Prescriber Targeting**: Discover high-value HCPs prescribing competitors
+- **Treatment Pathways**: Understand prescriber behavior and drug sequences
+
+### 📈 **Market Share Intelligence**
+- **Market Share Analysis**: Distribution, concentration, and HHI metrics
+- **Trend Analysis**: Historical market share tracking over time
+- **Competitive Positioning**: Your position vs. competitors
+- **New-to-Brand (NBx)**: Patient acquisition and switch analysis
 
 ## Architecture
 
@@ -97,6 +110,14 @@ OMOP_SCHEMA=omop_cdm
 - Backend API: http://localhost:8000
 - API Documentation: http://localhost:8000/docs
 - Frontend: http://localhost:3000
+
+## Who Is This For?
+
+**Vantage RWE** is built for pharmaceutical commercial teams:
+- 💼 **Brand Teams**: Track market share and competitive position
+- 🎯 **Sales Operations**: Identify and target high-value prescribers
+- 📊 **Commercial Analytics**: Generate real-world evidence insights
+- 🔬 **Medical Affairs**: Understand treatment patterns and patient journeys
 
 ## License
 

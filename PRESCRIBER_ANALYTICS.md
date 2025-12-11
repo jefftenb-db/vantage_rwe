@@ -1,8 +1,10 @@
-# Prescriber Analytics Feature
+# Prescriber Analytics Feature - Vantage RWE
+
+**Commercial Intelligence from Real-World Evidence**
 
 ## Overview
 
-The Prescriber Analytics module provides commercial intelligence capabilities for pharmaceutical companies to analyze healthcare provider (HCP) prescribing patterns, identify targeting opportunities, and understand treatment pathways.
+The Prescriber Analytics module in Vantage RWE provides commercial intelligence capabilities for pharmaceutical companies to analyze healthcare provider (HCP) prescribing patterns, identify targeting opportunities, and understand treatment pathways.
 
 ## 🎯 Key Capabilities
 

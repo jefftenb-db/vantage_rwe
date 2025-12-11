@@ -28,7 +28,7 @@ router = APIRouter()
 @router.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "OMOP Cohort Builder"}
+    return {"status": "healthy", "service": "Vantage RWE", "tagline": "Commercial Intelligence from Real-World Evidence"}
 
 
 @router.post("/concepts/search", response_model=List[Concept])

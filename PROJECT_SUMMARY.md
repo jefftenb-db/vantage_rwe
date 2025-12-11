@@ -1,4 +1,6 @@
-# OMOP Cohort Builder - Project Summary
+# Vantage RWE - Project Summary
+
+**Commercial Intelligence from Real-World Evidence**
 
 ## 🎯 Project Overview
 
