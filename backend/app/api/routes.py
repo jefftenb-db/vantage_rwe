@@ -10,10 +10,15 @@ from app.models.prescriber import (
     PrescriberSearchRequest, PrescriberTargetingRequest, PrescriberTargetingResponse,
     TreatmentPathwayByPrescriber
 )
+from app.models.market_share import (
+    MarketShareRequest, MarketShareResponse, TrendAnalysisResponse,
+    GeographicMarketShare, CompetitivePositioning, NewToBrandAnalysis
+)
 from app.services.omop_service import omop_service
 from app.services.cohort_builder import cohort_builder
 from app.services.genai_service import genai_service
 from app.services.prescriber_service import prescriber_service
+from app.services.market_share_service import market_share_service
 
 logger = logging.getLogger(__name__)
 
@@ -288,5 +293,146 @@ async def compare_prescribers(
         raise
     except Exception as e:
         logger.error(f"Error comparing prescribers: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# MARKET SHARE ANALYTICS ENDPOINTS
+# ============================================================================
+
+@router.post("/market-share/analysis", response_model=MarketShareResponse)
+async def get_market_share_analysis(request: MarketShareRequest):
+    """
+    Get comprehensive market share analysis.
+    
+    Returns market share for drugs in a therapeutic area/condition,
+    including concentration metrics (HHI, top 3/5 share).
+    
+    Perfect for understanding competitive landscape and market dynamics.
+    """
+    try:
+        response = market_share_service.get_market_share_analysis(request)
+        return response
+    except Exception as e:
+        logger.error(f"Error getting market share analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/market-share/trends/{drug_concept_id}", response_model=TrendAnalysisResponse)
+async def get_trend_analysis(
+    drug_concept_id: int,
+    start_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    granularity: str = Query('month', description="'month', 'quarter', or 'year'")
+):
+    """
+    Get market share trends over time for a drug.
+    
+    Shows how market share has changed period-over-period,
+    identifies peaks, and calculates growth rates.
+    
+    Essential for tracking product performance and forecasting.
+    """
+    try:
+        response = market_share_service.get_trend_analysis(
+            drug_concept_id=drug_concept_id,
+            start_date=start_date,
+            end_date=end_date,
+            granularity=granularity
+        )
+        return response
+    except Exception as e:
+        logger.error(f"Error getting trend analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/market-share/geographic", response_model=List[GeographicMarketShare])
+async def get_geographic_market_share(
+    drug_concept_ids: List[int],
+    geography_type: str = Query('state', description="'state', 'zip', or 'region'")
+):
+    """
+    Get market share by geographic region.
+    
+    Shows where your drug is strong vs. weak geographically.
+    Useful for territory planning and regional marketing strategies.
+    """
+    try:
+        if len(drug_concept_ids) > 10:
+            raise HTTPException(status_code=400, detail="Maximum 10 drugs for geographic analysis")
+        
+        response = market_share_service.get_geographic_market_share(
+            drug_concept_ids=drug_concept_ids,
+            geography_type=geography_type
+        )
+        return response
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting geographic market share: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/market-share/competitive/{your_drug_id}", response_model=CompetitivePositioning)
+async def get_competitive_positioning(
+    your_drug_id: int,
+    competitor_ids: str = Query(..., description="Comma-separated competitor drug IDs"),
+    start_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="YYYY-MM-DD")
+):
+    """
+    Analyze competitive position of your drug vs. competitors.
+    
+    Returns:
+    - Your rank and share vs. competitors
+    - Gap to market leader
+    - Relative positioning
+    
+    The "war room" view for brand teams.
+    """
+    try:
+        competitor_drug_ids = [int(id.strip()) for id in competitor_ids.split(',')]
+        
+        response = market_share_service.get_competitive_positioning(
+            your_drug_concept_id=your_drug_id,
+            competitor_drug_concept_ids=competitor_drug_ids,
+            start_date=start_date,
+            end_date=end_date
+        )
+        return response
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid competitor IDs: {e}")
+    except Exception as e:
+        logger.error(f"Error getting competitive positioning: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/market-share/new-to-brand/{drug_concept_id}", response_model=NewToBrandAnalysis)
+async def get_new_to_brand_analysis(
+    drug_concept_id: int,
+    start_date: str = Query(..., description="Analysis period start (YYYY-MM-DD)"),
+    end_date: str = Query(..., description="Analysis period end (YYYY-MM-DD)"),
+    lookback_days: int = Query(365, description="Days to look back for prior therapy")
+):
+    """
+    Analyze new-to-brand (NBx) patients.
+    
+    Identifies:
+    - How many patients are new to your drug
+    - Are they treatment-naive or switching from competitors?
+    - Which competitor drugs are they switching from?
+    
+    Critical for understanding growth sources and competitive dynamics.
+    """
+    try:
+        response = market_share_service.get_new_to_brand_analysis(
+            drug_concept_id=drug_concept_id,
+            start_date=start_date,
+            end_date=end_date,
+            lookback_days=lookback_days
+        )
+        return response
+    except Exception as e:
+        logger.error(f"Error getting new-to-brand analysis: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -4,9 +4,10 @@ import CohortBuilder from './components/CohortBuilder';
 import NaturalLanguageSearch from './components/NaturalLanguageSearch';
 import DatabaseStats from './components/DatabaseStats';
 import PrescriberAnalytics from './components/PrescriberAnalytics';
+import MarketShareAnalytics from './components/MarketShareAnalytics';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'builder' | 'genai' | 'prescribers'>('builder');
+  const [activeTab, setActiveTab] = useState<'builder' | 'genai' | 'prescribers' | 'market-share'>('builder');
 
   return (
     <div className="App">
@@ -37,12 +38,19 @@ function App() {
           >
             👨‍⚕️ Prescriber Analytics
           </button>
+          <button
+            className={`tab ${activeTab === 'market-share' ? 'active' : ''}`}
+            onClick={() => setActiveTab('market-share')}
+          >
+            📈 Market Share
+          </button>
         </div>
 
         <div className="tab-content">
           {activeTab === 'builder' && <CohortBuilder />}
           {activeTab === 'genai' && <NaturalLanguageSearch />}
           {activeTab === 'prescribers' && <PrescriberAnalytics />}
+          {activeTab === 'market-share' && <MarketShareAnalytics />}
         </div>
       </div>
     </div>

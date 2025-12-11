@@ -223,5 +223,139 @@ export const comparePrescribers = async (
   return response.data;
 };
 
+// Market Share Analytics Types
+export interface DrugMarketShare {
+  drug_concept_id: number;
+  drug_name: string;
+  total_prescriptions: number;
+  total_patients: number;
+  market_share_by_prescriptions: number;
+  market_share_by_patients: number;
+  rank: number;
+}
+
+export interface MarketShareResponse {
+  market_definition: string;
+  time_period: string;
+  total_market_prescriptions: number;
+  total_market_patients: number;
+  drug_shares: DrugMarketShare[];
+  top_3_concentration: number;
+  top_5_concentration: number;
+  herfindahl_index?: number;
+  total_drugs_in_market: number;
+  avg_prescriptions_per_drug: number;
+}
+
+export interface MarketShareTrend {
+  time_period: string;
+  prescriptions: number;
+  patients: number;
+  market_share: number;
+  prescriptions_change_pct?: number;
+  market_share_change_points?: number;
+}
+
+export interface TrendAnalysisResponse {
+  drug_concept_id: number;
+  drug_name: string;
+  trends: MarketShareTrend[];
+  overall_change_pct: number;
+  overall_share_change: number;
+  trend_direction: string;
+  peak_period?: string;
+  peak_market_share?: number;
+}
+
+export interface CompetitivePositioning {
+  your_drug_concept_id: number;
+  your_drug_name: string;
+  your_prescriptions: number;
+  your_patients: number;
+  your_market_share: number;
+  your_rank: number;
+  competitors: DrugMarketShare[];
+  share_gap_to_leader: number;
+  share_of_top_3?: number;
+}
+
+export interface NewToBrandAnalysis {
+  drug_concept_id: number;
+  drug_name: string;
+  time_period: string;
+  new_patients: number;
+  total_patients: number;
+  nbx_rate: number;
+  treatment_naive: number;
+  switched_from_competitor: number;
+  switch_sources: Array<{
+    drug_concept_id: number;
+    drug_name: string;
+    patient_count: number;
+  }>;
+}
+
+// Market Share Analytics API functions
+export const getMarketShareAnalysis = async (params: {
+  condition_concept_ids?: number[];
+  drug_concept_ids?: number[];
+  therapeutic_area?: string;
+  start_date?: string;
+  end_date?: string;
+  min_prescriptions?: number;
+  top_n?: number;
+}): Promise<MarketShareResponse> => {
+  const response = await api.post('/market-share/analysis', params);
+  return response.data;
+};
+
+export const getTrendAnalysis = async (
+  drugConceptId: number,
+  startDate?: string,
+  endDate?: string,
+  granularity: string = 'month'
+): Promise<TrendAnalysisResponse> => {
+  const response = await api.get(`/market-share/trends/${drugConceptId}`, {
+    params: {
+      start_date: startDate,
+      end_date: endDate,
+      granularity,
+    },
+  });
+  return response.data;
+};
+
+export const getCompetitivePositioning = async (
+  yourDrugId: number,
+  competitorIds: number[],
+  startDate?: string,
+  endDate?: string
+): Promise<CompetitivePositioning> => {
+  const response = await api.get(`/market-share/competitive/${yourDrugId}`, {
+    params: {
+      competitor_ids: competitorIds.join(','),
+      start_date: startDate,
+      end_date: endDate,
+    },
+  });
+  return response.data;
+};
+
+export const getNewToBrandAnalysis = async (
+  drugConceptId: number,
+  startDate: string,
+  endDate: string,
+  lookbackDays: number = 365
+): Promise<NewToBrandAnalysis> => {
+  const response = await api.get(`/market-share/new-to-brand/${drugConceptId}`, {
+    params: {
+      start_date: startDate,
+      end_date: endDate,
+      lookback_days: lookbackDays,
+    },
+  });
+  return response.data;
+};
+
 export default api;
 
