@@ -3,9 +3,10 @@ import './App.css';
 import CohortBuilder from './components/CohortBuilder';
 import NaturalLanguageSearch from './components/NaturalLanguageSearch';
 import DatabaseStats from './components/DatabaseStats';
+import PrescriberAnalytics from './components/PrescriberAnalytics';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'builder' | 'genai'>('builder');
+  const [activeTab, setActiveTab] = useState<'builder' | 'genai' | 'prescribers'>('builder');
 
   return (
     <div className="App">
@@ -30,11 +31,18 @@ function App() {
           >
             🤖 GenAI Query
           </button>
+          <button
+            className={`tab ${activeTab === 'prescribers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('prescribers')}
+          >
+            👨‍⚕️ Prescriber Analytics
+          </button>
         </div>
 
         <div className="tab-content">
           {activeTab === 'builder' && <CohortBuilder />}
           {activeTab === 'genai' && <NaturalLanguageSearch />}
+          {activeTab === 'prescribers' && <PrescriberAnalytics />}
         </div>
       </div>
     </div>

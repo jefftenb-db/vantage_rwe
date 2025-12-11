@@ -1,13 +1,19 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
+from fastapi import APIRouter, HTTPException, Query
+from typing import List, Optional
 import logging
 from app.models.cohort import (
     ConceptSearchRequest, Concept, CohortDefinition, CohortResult,
     NaturalLanguageQuery, NaturalLanguageResponse
 )
+from app.models.prescriber import (
+    PrescriberProfile, PrescriberMetrics, DrugPrescriberAnalytics,
+    PrescriberSearchRequest, PrescriberTargetingRequest, PrescriberTargetingResponse,
+    TreatmentPathwayByPrescriber
+)
 from app.services.omop_service import omop_service
 from app.services.cohort_builder import cohort_builder
 from app.services.genai_service import genai_service
+from app.services.prescriber_service import prescriber_service
 
 logger = logging.getLogger(__name__)
 
@@ -144,5 +150,143 @@ async def get_database_summary():
         return stats
     except Exception as e:
         logger.error(f"Error getting database summary: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# PRESCRIBER ANALYTICS ENDPOINTS
+# ============================================================================
+
+@router.get("/prescribers/{provider_id}", response_model=PrescriberProfile)
+async def get_prescriber_profile(provider_id: int):
+    """
+    Get detailed profile for a specific prescriber.
+    
+    Returns prescriber information, specialties, and aggregate metrics.
+    """
+    try:
+        profile = prescriber_service.get_prescriber_profile(provider_id)
+        if not profile:
+            raise HTTPException(status_code=404, detail="Prescriber not found")
+        return profile
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting prescriber profile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/prescribers/search", response_model=List[PrescriberMetrics])
+async def search_prescribers(request: PrescriberSearchRequest):
+    """
+    Search for prescribers with filtering.
+    
+    Supports filtering by specialty, drug prescribed, and minimum patient count.
+    Returns prescribers ranked by volume with percentile/decile rankings.
+    """
+    try:
+        prescribers = prescriber_service.search_prescribers(request)
+        return prescribers
+    except Exception as e:
+        logger.error(f"Error searching prescribers: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/prescribers/drug/{drug_concept_id}/analytics", response_model=DrugPrescriberAnalytics)
+async def get_drug_prescriber_analytics(
+    drug_concept_id: int,
+    limit: int = Query(50, ge=1, le=500, description="Max number of top prescribers to return")
+):
+    """
+    Get comprehensive prescriber analytics for a specific drug.
+    
+    Returns:
+    - Top prescribers by volume
+    - Market concentration metrics
+    - Prescriber distribution (top 10%, top 20%)
+    
+    Perfect for understanding who the key opinion leaders are for a drug.
+    """
+    try:
+        analytics = prescriber_service.get_drug_prescriber_analytics(
+            drug_concept_id=drug_concept_id,
+            limit=limit
+        )
+        return analytics
+    except Exception as e:
+        logger.error(f"Error getting drug prescriber analytics: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/prescribers/targeting", response_model=PrescriberTargetingResponse)
+async def identify_target_prescribers(request: PrescriberTargetingRequest):
+    """
+    Identify target prescribers for commercial outreach.
+    
+    Finds prescribers who:
+    - Treat patients with target conditions
+    - Prescribe competitor drugs
+    - Have low/no adoption of your target drug
+    
+    Returns prioritized list with opportunity scores.
+    This is the "money endpoint" for sales force targeting.
+    """
+    try:
+        response = prescriber_service.identify_target_prescribers(request)
+        return response
+    except Exception as e:
+        logger.error(f"Error identifying target prescribers: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/prescribers/{provider_id}/treatment-pathways", response_model=TreatmentPathwayByPrescriber)
+async def get_prescriber_treatment_pathways(
+    provider_id: int,
+    condition_concept_id: Optional[int] = Query(None, description="Filter by condition")
+):
+    """
+    Get treatment pathways for a specific prescriber.
+    
+    Shows:
+    - What drugs they prescribe first-line
+    - Common drug switching patterns
+    - Treatment sequences
+    
+    Useful for understanding prescriber behavior and preferences.
+    """
+    try:
+        pathways = prescriber_service.get_prescriber_treatment_pathways(
+            provider_id=provider_id,
+            condition_concept_id=condition_concept_id
+        )
+        return pathways
+    except Exception as e:
+        logger.error(f"Error getting prescriber treatment pathways: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/prescribers/compare", response_model=List[PrescriberMetrics])
+async def compare_prescribers(
+    provider_ids: List[int],
+    drug_concept_id: Optional[int] = Query(None, description="Filter by specific drug")
+):
+    """
+    Compare multiple prescribers side-by-side.
+    
+    Useful for benchmarking and territory analysis.
+    """
+    try:
+        if len(provider_ids) > 20:
+            raise HTTPException(status_code=400, detail="Maximum 20 prescribers for comparison")
+        
+        comparison = prescriber_service.compare_prescribers(
+            provider_ids=provider_ids,
+            drug_concept_id=drug_concept_id
+        )
+        return comparison
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error comparing prescribers: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
