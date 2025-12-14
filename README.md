@@ -2,7 +2,6 @@
 
 **Commercial Intelligence from Real-World Evidence**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![React 18](https://img.shields.io/badge/react-18-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
@@ -165,13 +164,13 @@ Comprehensive competitive intelligence and market dynamics:
 ### System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Frontend (React)                        │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Cohort     │  │  Prescriber  │  │ Market Share │     │
-│  │   Builder    │  │  Analytics   │  │  Analytics   │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                      Frontend (React)                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │   Cohort     │  │  Prescriber  │  │ Market Share │  │
+│  │   Builder    │  │  Analytics   │  │  Analytics   │  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+└────────────────────────────────────────────────────────┘
                             │
                     ┌───────▼────────┐
                     │   REST API     │
@@ -231,10 +230,15 @@ vantage-rwe/
 │   └── package.json
 │
 └── docs/                         # Documentation
-    ├── PRESCRIBER_ANALYTICS.md
+    ├── CREATE_ENV.md
+    ├── DATABRICKS_APP_DEPLOYMENT.md
+    ├── EXAMPLE_COHORTS.md
+    ├── GENIE_INTEGRATION.md
+    ├── GENIE_SETUP.md
     ├── MARKET_SHARE_ANALYTICS.md
-    ├── BRANCH_GUIDE.md
-    └── QUICKSTART.md
+    ├── PRESCRIBER_ANALYTICS.md
+    ├── PROJECT_SUMMARY.md
+    └── QUICK_SSL_FIX.md
 ```
 
 ---
@@ -440,13 +444,14 @@ The platform leverages these OMOP tables:
 
 ## 🎓 Documentation
 
-- **[Quick Start Guide](./QUICKSTART.md)** - Get running in 5 minutes
-- **[Setup Guide](./SETUP_GUIDE.md)** - Detailed installation
-- **[Architecture](./ARCHITECTURE.md)** - System design details
-- **[Prescriber Analytics](./PRESCRIBER_ANALYTICS.md)** - HCP targeting guide
-- **[Market Share Analytics](./MARKET_SHARE_ANALYTICS.md)** - Competitive intelligence guide
-- **[Branch Guide](./BRANCH_GUIDE.md)** - Git branch navigation
-- **[Example Cohorts](./EXAMPLE_COHORTS.md)** - Sample queries
+- **[Databricks App Deployment](./docs/DATABRICKS_APP_DEPLOYMENT.md)** - Deploy to Databricks Apps
+- **[Genie Setup Guide](./docs/GENIE_SETUP.md)** - Configure AI-powered natural language queries
+- **[Prescriber Analytics](./docs/PRESCRIBER_ANALYTICS.md)** - HCP targeting guide
+- **[Market Share Analytics](./docs/MARKET_SHARE_ANALYTICS.md)** - Competitive intelligence guide
+- **[Example Cohorts](./docs/EXAMPLE_COHORTS.md)** - Sample queries
+- **[Genie Integration](./docs/GENIE_INTEGRATION.md)** - Natural language query examples
+- **[Project Summary](./docs/PROJECT_SUMMARY.md)** - Technical overview
+- **[Environment Setup](./docs/CREATE_ENV.md)** - Environment configuration
 
 ---
 
@@ -542,12 +547,6 @@ We welcome contributions! Please see our contributing guidelines:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 

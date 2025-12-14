@@ -41,7 +41,8 @@ class GenAIService:
         """
         
         if not self.genie_space_id:
-            logger.warning("Genie Space ID not configured, falling back to rule-based approach")
+            logger.warning("Genie Space ID not configured. Set DATABRICKS_GENIE_SPACE_ID environment variable to enable AI-powered natural language queries.")
+            logger.info("Falling back to rule-based pattern matching approach")
             return self._fallback_rule_based_query(nl_query)
         
         try:
@@ -49,7 +50,8 @@ class GenAIService:
             conversation_data = self._start_genie_conversation(nl_query.query)
             
             if not conversation_data:
-                logger.error("Failed to start Genie conversation")
+                logger.error("Failed to start Genie conversation. Falling back to rule-based pattern matching.")
+                logger.info("To use Genie AI, verify: 1) Genie Space ID is correct, 2) Token has permission, 3) Space exists in workspace")
                 return self._fallback_rule_based_query(nl_query)
             
             conversation_id = conversation_data['conversation']['id']
@@ -121,11 +123,22 @@ class GenAIService:
         }
         
         try:
-            response = requests.post(url, json=payload, headers=headers, verify=not settings.databricks_verify_ssl)
+            # Use SSL verification setting (note: original code had this inverted for corporate proxy compatibility)
+            response = requests.post(url, json=payload, headers=headers, verify=settings.databricks_verify_ssl)
             response.raise_for_status()
             return response.json()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.error(f"Genie Space not found. Please verify the Genie Space ID '{self.genie_space_id}' exists and is accessible.")
+                logger.error(f"URL attempted: {url}")
+            elif e.response.status_code == 403:
+                logger.error(f"Access denied to Genie Space. Check token permissions for Space ID '{self.genie_space_id}'")
+            else:
+                logger.error(f"HTTP error starting Genie conversation: {e}")
+            return None
         except requests.exceptions.RequestException as e:
             logger.error(f"Error starting Genie conversation: {e}")
+            logger.error(f"If you see SSL errors, try setting DATABRICKS_VERIFY_SSL=false in your .env file")
             return None
     
     def _poll_message_status(self, conversation_id: str, message_id: str, max_wait_seconds: int = 120) -> Optional[Dict[str, Any]]:
@@ -146,7 +159,8 @@ class GenAIService:
         
         while time.time() - start_time < max_wait_seconds:
             try:
-                response = requests.get(url, headers=headers, verify=not settings.databricks_verify_ssl)
+                # Use SSL verification setting (matches databricks.py behavior)
+                response = requests.get(url, headers=headers, verify=settings.databricks_verify_ssl)
                 response.raise_for_status()
                 message_data = response.json()
                 
@@ -164,6 +178,7 @@ class GenAIService:
                 
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error polling Genie message: {e}")
+                logger.error(f"If you see SSL errors, try setting DATABRICKS_VERIFY_SSL=false in your .env file")
                 return None
         
         logger.warning(f"Genie message polling timed out after {max_wait_seconds} seconds")

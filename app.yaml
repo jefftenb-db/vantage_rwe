@@ -1,0 +1,37 @@
+command: ["npm", "run", "start"]
+
+env:
+  # Databricks Connection
+  - name: DATABRICKS_HOST
+    value: "{{secrets/omop-app/databricks_host}}"
+  - name: DATABRICKS_TOKEN
+    value: "{{secrets/omop-app/databricks_token}}"
+  - name: DATABRICKS_HTTP_PATH
+    value: "{{secrets/omop-app/databricks_http_path}}"
+  
+  # OMOP Schema Configuration
+  - name: OMOP_CATALOG
+    value: "hive_metastore"
+  - name: OMOP_SCHEMA
+    value: "omop_cdm"
+  
+  # Optional: Databricks Genie Space ID
+  - name: DATABRICKS_GENIE_SPACE_ID
+    value: "{{secrets/omop-app/genie_space_id}}"
+  
+  # API Configuration
+  - name: API_HOST
+    value: "0.0.0.0"
+  - name: API_PORT
+    value: "8000"
+  - name: CORS_ORIGINS
+    value: "http://localhost:3000,https://*.databricks.com"
+  
+  # SSL Configuration
+  - name: DATABRICKS_VERIFY_SSL
+    value: "true"
+  
+  # React App Configuration
+  - name: REACT_APP_API_URL
+    value: "http://localhost:8000/api/v1"
+
