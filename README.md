@@ -251,8 +251,8 @@ vantage-rwe/
 - **Node.js 18+** with npm
 - **Databricks workspace** with:
   - OMOP CDM data loaded
-  - SQL Warehouse or Cluster running
-  - Personal Access Token
+  - SQL Warehouse running
+  - Service principal with OAuth credentials
 
 ### 1. Clone the Repository
 
@@ -271,18 +271,40 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r ../requirements.txt
 
 # Configure environment
 cp env.template .env
-# Edit .env with your Databricks credentials
+# Edit .env with your Databricks OAuth credentials (see below)
 
 # Run the API server
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --port 8000
 ```
 
 API will be available at **http://localhost:8000**  
 API Documentation at **http://localhost:8000/docs**
+
+#### Configure OAuth Credentials
+
+Edit `backend/.env`:
+
+```env
+DATABRICKS_HOST=your-workspace.cloud.databricks.com
+DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/YOUR_WAREHOUSE_ID
+
+# OAuth Service Principal (required)
+DATABRICKS_CLIENT_ID=your-service-principal-client-id
+DATABRICKS_CLIENT_SECRET=your-service-principal-oauth-secret
+
+OMOP_CATALOG=vantage_rwe
+OMOP_SCHEMA=omop
+```
+
+**To get OAuth credentials:**
+1. Go to Databricks → Settings → User Management → Service Principals
+2. Create or select a service principal
+3. Go to Secrets tab → Generate secret
+4. Copy Client ID and Secret (shown only once!)
 
 ### 3. Frontend Setup
 
@@ -302,11 +324,22 @@ npm start
 
 Application will open at **http://localhost:3000**
 
-### 4. Access the Application
+### 4. Alternative: Use Development Script
+
+Or use the all-in-one development script:
+
+```bash
+# From project root
+./run_dev.sh
+```
+
+This starts both backend (port 8000) and frontend (port 3000) with hot reload.
+
+### 5. Access the Application
 
 Open your browser to **http://localhost:3000** and explore:
 - **Cohort Builder** tab - Build patient populations
-- **GenAI Query** tab - Natural language search
+- **GenAI Query** tab - Natural language search (requires Genie)
 - **Prescriber Analytics** tab - HCP targeting and analysis
 - **Market Share** tab - Competitive intelligence
 
@@ -316,27 +349,31 @@ Open your browser to **http://localhost:3000** and explore:
 
 ### Backend Environment Variables
 
-Create `backend/.env` file:
+Create `backend/.env` file (copy from `backend/env.template`):
 
 ```env
 # Databricks Connection
 DATABRICKS_HOST=your-workspace.cloud.databricks.com
-DATABRICKS_TOKEN=dapi1234567890abcdef
 DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/abc123xyz789
 
-# OMOP Schema
-OMOP_CATALOG=hive_metastore
-OMOP_SCHEMA=omop_cdm
+# OAuth Service Principal Authentication (REQUIRED)
+# Get these from: Settings → User Management → Service Principals
+DATABRICKS_CLIENT_ID=your-service-principal-client-id
+DATABRICKS_CLIENT_SECRET=your-service-principal-oauth-secret
 
-# Optional: Databricks Genie
+# OMOP Schema Configuration
+OMOP_CATALOG=vantage_rwe
+OMOP_SCHEMA=omop
+
+# Optional: Databricks Genie for AI-powered queries
 DATABRICKS_GENIE_SPACE_ID=your-genie-space-id
 
 # API Configuration
 API_HOST=0.0.0.0
 API_PORT=8000
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
 
-# SSL (if needed)
+# SSL Configuration
 DATABRICKS_VERIFY_SSL=true
 ```
 
@@ -345,8 +382,24 @@ DATABRICKS_VERIFY_SSL=true
 Create `frontend/.env` (optional):
 
 ```env
+# API endpoint (defaults to http://localhost:8000/api/v1)
 REACT_APP_API_URL=http://localhost:8000/api/v1
 ```
+
+### Authentication
+
+This application uses **OAuth M2M (Machine-to-Machine)** authentication with Databricks service principals:
+
+- ✅ Automatic token generation and refresh
+- ✅ Tokens valid for 1 hour
+- ✅ Same authentication in local and production
+- ✅ Production-grade security
+
+**Why OAuth vs Personal Tokens?**
+- Better security (scoped to service principal)
+- Auto-refresh (no expired token issues)
+- Audit trail (actions tied to service principal)
+- Production-ready (recommended by Databricks)
 
 ---
 
@@ -444,14 +497,54 @@ The platform leverages these OMOP tables:
 
 ## 🎓 Documentation
 
+### Deployment & Setup
 - **[Databricks App Deployment](./docs/DATABRICKS_APP_DEPLOYMENT.md)** - Deploy to Databricks Apps
-- **[Genie Setup Guide](./docs/GENIE_SETUP.md)** - Configure AI-powered natural language queries
+- **[Deployment Setup](./DEPLOYMENT_SETUP.md)** - Current deployment configuration
+- **[OAuth Setup](./docs/OAUTH_SETUP.md)** - OAuth M2M authentication guide
+- **[Environment Setup](./docs/CREATE_ENV.md)** - Environment configuration
+
+### Features & Usage
 - **[Prescriber Analytics](./docs/PRESCRIBER_ANALYTICS.md)** - HCP targeting guide
 - **[Market Share Analytics](./docs/MARKET_SHARE_ANALYTICS.md)** - Competitive intelligence guide
-- **[Example Cohorts](./docs/EXAMPLE_COHORTS.md)** - Sample queries
+- **[Genie Setup Guide](./docs/GENIE_SETUP.md)** - Configure AI-powered natural language queries
 - **[Genie Integration](./docs/GENIE_INTEGRATION.md)** - Natural language query examples
+- **[Example Cohorts](./docs/EXAMPLE_COHORTS.md)** - Sample queries
 - **[Project Summary](./docs/PROJECT_SUMMARY.md)** - Technical overview
-- **[Environment Setup](./docs/CREATE_ENV.md)** - Environment configuration
+
+---
+
+## ☁️ Databricks Apps Deployment
+
+Deploy Vantage RWE as a Databricks App for production use:
+
+### Quick Deploy
+
+1. **Create secrets** in Databricks secret scope `omop-app`:
+   ```bash
+   databricks secrets put-secret omop-app http_path \
+     --string-value "/sql/1.0/warehouses/YOUR_WAREHOUSE_ID"
+   
+   databricks secrets put-secret omop-app genie_space_id \
+     --string-value "YOUR_GENIE_SPACE_ID"
+   ```
+
+2. **Deploy via CLI:**
+   ```bash
+   databricks sync . /Workspace/Users/you@company.com/vantage-rwe
+   databricks apps deploy vantage-rwe \
+     --source-code-path /Workspace/Users/you@company.com/vantage-rwe
+   ```
+
+3. **Access your app** at the Databricks Apps URL
+
+### Auto-Provided by Databricks Apps
+- `DATABRICKS_HOST` - Workspace hostname
+- `DATABRICKS_CLIENT_ID` - Service principal client ID
+- `DATABRICKS_CLIENT_SECRET` - OAuth secret
+
+**No manual OAuth setup needed in production!**
+
+See [Databricks App Deployment Guide](./docs/DATABRICKS_APP_DEPLOYMENT.md) for details.
 
 ---
 
@@ -527,14 +620,18 @@ npm run lint
 ### Building for Production
 
 ```bash
-# Frontend build
-cd frontend
+# Build React frontend to static files
 npm run build
 
-# Backend with gunicorn
-cd backend
-gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
+# Production server (single FastAPI server serves API + static files)
+npm start
 ```
+
+**Production Architecture:**
+- Single FastAPI server on port 8000
+- Serves API at `/api/v1/*`
+- Serves React static files for all other routes
+- No CORS issues (same origin)
 
 ---
 

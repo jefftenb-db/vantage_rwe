@@ -1,19 +1,17 @@
-command: ["npm", "run", "start"]
+command: ["sh", "start.sh"]
 
 env:
   # Databricks Connection
-  - name: DATABRICKS_HOST
-    value: "{{secrets/omop-app/databricks_host}}"
-  - name: DATABRICKS_TOKEN
-    value: "{{secrets/omop-app/databricks_token}}"
+  # Note: DATABRICKS_HOST, DATABRICKS_CLIENT_ID, and DATABRICKS_CLIENT_SECRET 
+  # are automatically provided by Databricks Apps
   - name: DATABRICKS_HTTP_PATH
-    value: "{{secrets/omop-app/databricks_http_path}}"
+    value: "{{secrets/omop-app/http_path}}"
   
   # OMOP Schema Configuration
   - name: OMOP_CATALOG
-    value: "hive_metastore"
+    value: "vantage_rwe"
   - name: OMOP_SCHEMA
-    value: "omop_cdm"
+    value: "omop"
   
   # Optional: Databricks Genie Space ID
   - name: DATABRICKS_GENIE_SPACE_ID
@@ -24,6 +22,8 @@ env:
     value: "0.0.0.0"
   - name: API_PORT
     value: "8000"
+  # CORS: Supports wildcards (e.g., https://*.databricks.com matches all Databricks workspaces)
+  # The backend automatically converts wildcard patterns to regex for proper CORS validation
   - name: CORS_ORIGINS
     value: "http://localhost:3000,https://*.databricks.com"
   
@@ -31,7 +31,6 @@ env:
   - name: DATABRICKS_VERIFY_SSL
     value: "true"
   
-  # React App Configuration
+  # React App Configuration (use relative URL for Databricks Apps)
   - name: REACT_APP_API_URL
-    value: "http://localhost:8000/api/v1"
-
+    value: "/api/v1"

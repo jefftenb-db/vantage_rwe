@@ -26,8 +26,42 @@ class GenAIService:
         self.schema = settings.omop_full_schema
         self.genie_space_id = settings.databricks_genie_space_id
         self.databricks_host = settings.databricks_host
-        self.databricks_token = settings.databricks_token
         self.api_base_url = f"https://{self.databricks_host}/api/2.0/genie"
+        
+        # OAuth Service Principal credentials (required)
+        self.client_id = settings.databricks_client_id
+        self.client_secret = settings.databricks_client_secret
+        
+        logger.info("GenAI service using OAuth M2M authentication")
+    
+    def _get_access_token(self) -> Optional[str]:
+        """Get OAuth M2M access token for API requests."""
+        # Generate OAuth M2M token
+        import base64
+        
+        token_url = f"https://{self.databricks_host}/oidc/v1/token"
+        auth_header = base64.b64encode(
+            f"{self.client_id}:{self.client_secret}".encode()
+        ).decode()
+        
+        headers = {
+            "Authorization": f"Basic {auth_header}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        
+        data = {
+            "grant_type": "client_credentials",
+            "scope": "all-apis"
+        }
+        
+        try:
+            response = requests.post(token_url, headers=headers, data=data, verify=settings.databricks_verify_ssl)
+            response.raise_for_status()
+            token_data = response.json()
+            return token_data.get("access_token")
+        except Exception as e:
+            logger.error(f"Failed to obtain OAuth token: {e}")
+            return None
     
     def process_natural_language_query(self, nl_query: NaturalLanguageQuery) -> NaturalLanguageResponse:
         """
@@ -113,8 +147,14 @@ class GenAIService:
         """
         url = f"{self.api_base_url}/spaces/{self.genie_space_id}/start-conversation"
         
+        # Get access token (OAuth or PAT)
+        access_token = self._get_access_token()
+        if not access_token:
+            logger.error("No access token available for Genie API")
+            return None
+        
         headers = {
-            "Authorization": f"Bearer {self.databricks_token}",
+            "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json"
         }
         
@@ -149,8 +189,14 @@ class GenAIService:
         """
         url = f"{self.api_base_url}/spaces/{self.genie_space_id}/conversations/{conversation_id}/messages/{message_id}"
         
+        # Get access token (OAuth or PAT)
+        access_token = self._get_access_token()
+        if not access_token:
+            logger.error("No access token available for Genie API")
+            return None
+        
         headers = {
-            "Authorization": f"Bearer {self.databricks_token}"
+            "Authorization": f"Bearer {access_token}"
         }
         
         start_time = time.time()

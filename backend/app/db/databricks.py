@@ -18,9 +18,18 @@ class DatabricksConnection:
     
     def __init__(self):
         self.host = settings.databricks_host
-        self.token = settings.databricks_token
         self.http_path = settings.databricks_http_path
         self.verify_ssl = settings.databricks_verify_ssl
+        
+        # OAuth Service Principal credentials (required)
+        self.client_id = settings.databricks_client_id
+        self.client_secret = settings.databricks_client_secret
+        
+        logger.info("Using OAuth M2M authentication with service principal")
+        # Safe logging - show presence and length, never the actual secret
+        logger.info(f"OAuth credentials detected:")
+        logger.info(f"  - client_id: {self.client_id[:8]}... (length: {len(self.client_id)})")
+        logger.info(f"  - client_secret: ****** (length: {len(self.client_secret)})")
     
     @contextmanager
     def get_connection(self):
@@ -44,12 +53,50 @@ class DatabricksConnection:
                 original_context = ssl._create_default_https_context
                 ssl._create_default_https_context = ssl._create_unverified_context
             
-            # Configure connection parameters
+            # Configure connection parameters based on auth method
             conn_params = {
                 "server_hostname": self.host,
                 "http_path": self.http_path,
-                "access_token": self.token
             }
+            
+            # OAuth M2M with service principal
+            # For M2M (machine-to-machine), we manually request an access token
+            # The Databricks SQL connector's OAuth flow is interactive (browser-based)
+            # So we get the token via client credentials flow instead
+            import requests
+            import base64
+            
+            logger.info(f"Connecting to Databricks using OAuth M2M (service principal)")
+            
+            # Prepare OAuth token request
+            token_url = f"https://{self.host}/oidc/v1/token"
+            auth_header = base64.b64encode(
+                f"{self.client_id}:{self.client_secret}".encode()
+            ).decode()
+            
+            headers = {
+                "Authorization": f"Basic {auth_header}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
+            
+            data = {
+                "grant_type": "client_credentials",
+                "scope": "all-apis"
+            }
+            
+            # Request OAuth token
+            logger.info(f"Requesting OAuth token from {token_url}")
+            response = requests.post(token_url, headers=headers, data=data, verify=self.verify_ssl)
+            response.raise_for_status()
+            
+            token_data = response.json()
+            access_token = token_data.get("access_token")
+            
+            if not access_token:
+                raise ValueError("Failed to obtain OAuth access token")
+            
+            conn_params["access_token"] = access_token
+            logger.info("OAuth M2M token obtained successfully")
             
             # Add SSL verification parameters for databricks connector
             if not self.verify_ssl:

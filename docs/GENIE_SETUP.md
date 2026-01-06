@@ -248,3 +248,4 @@ If you continue to have issues:
 3. Test the Genie Space directly in the Databricks UI
 4. Ensure your token has the necessary permissions
 
+

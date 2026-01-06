@@ -72,7 +72,7 @@ if [ ! -d "venv" ]; then
 fi
 
 source venv/bin/activate
-pip install -q -r requirements.txt
+pip install -q -r ../requirements.txt
 cd ..
 
 # Check frontend dependencies

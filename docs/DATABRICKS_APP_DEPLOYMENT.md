@@ -4,12 +4,16 @@ This guide explains how to deploy Vantage RWE as a Databricks App.
 
 ## Overview
 
-Vantage RWE is configured to run as a Databricks App with both a React frontend and FastAPI backend running concurrently. The deployment process automatically:
+Vantage RWE is configured to run as a Databricks App with a FastAPI backend serving a built React frontend. The deployment process automatically:
 
-1. Installs Node.js dependencies (`npm install`)
+1. Installs Node.js dependencies (`npm install`) - root and frontend
 2. Installs Python dependencies (`pip install -r requirements.txt`)
-3. Builds the React frontend (`npm run build`)
-4. Starts both services using `concurrently`
+3. Builds the React frontend to static files (`npm run build`)
+4. Starts the FastAPI backend on port 8080, which serves both:
+   - API endpoints at `/api/v1/*`
+   - React static files for all other routes
+
+**Note**: In production, the app runs as a single FastAPI server (not two concurrent servers). The backend serves the pre-built React static files, ensuring a single port and unified deployment suitable for Databricks Apps.
 
 ## Prerequisites
 
@@ -20,6 +24,36 @@ Before deploying, ensure you have:
 - **SQL Warehouse or Cluster** running with access to OMOP data
 - **Personal Access Token** or service principal credentials
 - **Databricks CLI** installed (for CLI deployment)
+
+## Production Architecture
+
+### Development vs Production
+
+**Development Mode** (`npm run dev`):
+- Frontend dev server on port 3000 (with hot reload)
+- Backend API server on port 8000
+- CORS enabled between the two servers
+
+**Production Mode** (`npm start` - used by Databricks Apps):
+- Single FastAPI server on port 8080
+- Serves pre-built React static files from `/frontend/build`
+- API routes at `/api/v1/*`
+- React routing handled via catch-all route
+
+### How It Works
+
+1. **Build Phase**: React app is built to static HTML/CSS/JS in `frontend/build/`
+2. **Runtime**: FastAPI mounts the build directory and serves:
+   - Static assets (JS, CSS, images) at `/static/*`
+   - React app entry point (`index.html`) for all non-API routes
+   - API endpoints at `/api/v1/*`
+3. **Routing**: React Router handles client-side routing after the initial page load
+
+This architecture ensures:
+- Single port deployment (required for Databricks Apps)
+- No CORS issues (same origin for frontend and backend)
+- Efficient static file serving
+- Clean separation between API and UI routes
 
 ## Step 1: Set Up Databricks Secrets
 
@@ -175,8 +209,15 @@ The `app.yaml` file configures these environment variables:
 | `OMOP_SCHEMA` | OMOP schema name | `omop_cdm` |
 | `DATABRICKS_GENIE_SPACE_ID` | Genie Space ID (optional) | `01abc234-5678-90de-f123-456789abcdef` |
 | `API_HOST` | Backend host | `0.0.0.0` |
-| `API_PORT` | Backend port | `8000` |
-| `CORS_ORIGINS` | Allowed CORS origins | `http://localhost:3000,https://*.databricks.com` |
+| `API_PORT` | Backend port | `8080` (Databricks Apps standard) |
+| `REACT_APP_API_URL` | Frontend API URL | `/api/v1` (relative path for same-origin) |
+| `CORS_ORIGINS` | Allowed CORS origins (supports wildcards) | `http://localhost:3000,https://*.databricks.com` |
+
+**Note on CORS_ORIGINS**: The application supports both exact origins and wildcard patterns:
+- Exact origins: `http://localhost:3000` (matched literally)
+- Wildcard patterns: `https://*.databricks.com` (converted to regex automatically)
+- Multiple origins: Separate with commas
+- The wildcard `*` matches any characters, allowing all Databricks workspace URLs
 
 ## Troubleshooting
 
@@ -192,15 +233,35 @@ The `app.yaml` file configures these environment variables:
 - **Wrong paths**: Verify the HTTP path points to a running SQL Warehouse
 - **Permissions**: Ensure the app service principal has access to OMOP data
 
-### App Won't Start
+### App Won't Start / "App is currently unavailable"
+
+This error typically means the app isn't listening on the correct port or hasn't started properly.
+
+**Check the port configuration**:
+- Databricks Apps expects port **8080** by default
+- Verify `API_PORT` in `app.yaml` is set to `8080`
+- Ensure your start command properly uses this port
 
 **Check the command**:
 - Verify `app.yaml` has the correct command: `["npm", "run", "start"]`
-- Ensure `package.json` has the `start` script defined
+- Ensure `package.json` has the `start` script that runs the production server
+- The start script should run FastAPI on port 8080, NOT `concurrently` with two servers
 
 **Check dependencies**:
-- Verify `requirements.txt` includes all Python packages
-- Verify `package.json` includes `concurrently`
+- Verify `requirements.txt` includes all Python packages (especially `uvicorn`)
+- Verify frontend dependencies are installed via `postinstall` script
+- Check logs for any import errors or missing packages
+
+**Check build artifacts**:
+- Ensure the React build completed successfully
+- Verify `frontend/build/` directory exists with static files
+- Check logs for build errors during deployment
+
+**Common fix**:
+If you see "npm build: exit status 127", it means frontend dependencies aren't installed. Add this to `package.json`:
+```json
+"postinstall": "cd frontend && npm install"
+```
 
 ### Can't Connect to Database
 
@@ -219,8 +280,11 @@ python test_connection.py
 ### Frontend Can't Reach Backend
 
 **Check CORS settings**:
-- Update `CORS_ORIGINS` in `app.yaml` to include your Databricks workspace URL
+- The default `CORS_ORIGINS` includes `https://*.databricks.com` which matches all Databricks workspaces
+- Wildcard patterns are automatically converted to regex for proper matching
+- For specific workspaces, you can use exact URLs: `https://myworkspace.cloud.databricks.com`
 - Verify `REACT_APP_API_URL` points to the correct backend URL
+- Check browser console for CORS errors (they typically mention "Origin 'https://...' has been blocked")
 
 **For Databricks Apps**, you may need to update the frontend API URL to use relative paths or the app's URL.
 

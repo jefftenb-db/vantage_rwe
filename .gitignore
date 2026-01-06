@@ -41,9 +41,10 @@ Thumbs.db
 .coverage
 htmlcov/
 test.py
-test_*.py
 
 # Logs
 *.log
 logs/
 
+
+.databricks

@@ -6,11 +6,13 @@
   "scripts": {
     "install:frontend": "cd frontend && npm install",
     "install:backend": "pip install -r requirements.txt",
+    "postinstall": "cd frontend && npm install",
     "build": "cd frontend && npm run build",
-    "start:backend": "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000",
+    "start:backend": "cd backend && python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000",
     "start:frontend": "cd frontend && PORT=3000 npm start",
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "dev": "./run_dev.sh"
+    "start:prod": "cd backend && python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080",
+    "start": "npm run start:prod",
+    "dev": "concurrently \"npm run start:backend\" \"npm run start:frontend\""
   },
   "dependencies": {
     "concurrently": "^8.2.2"
