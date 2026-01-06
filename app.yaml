@@ -5,7 +5,7 @@ env:
   # Note: DATABRICKS_HOST, DATABRICKS_CLIENT_ID, and DATABRICKS_CLIENT_SECRET 
   # are automatically provided by Databricks Apps
   - name: DATABRICKS_HTTP_PATH
-    value: "{{secrets/omop-app/http_path}}"
+    valueFrom: http_path
   
   # OMOP Schema Configuration
   - name: OMOP_CATALOG
@@ -15,7 +15,7 @@ env:
   
   # Optional: Databricks Genie Space ID
   - name: DATABRICKS_GENIE_SPACE_ID
-    value: "{{secrets/omop-app/genie_space_id}}"
+    valueFrom: genie_space_id
   
   # API Configuration
   - name: API_HOST
