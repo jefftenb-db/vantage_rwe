@@ -1,11 +1,12 @@
 from typing import List, Set, Dict, Any
 import time
 import logging
+from datetime import date
 from app.db.databricks import db
 from app.config import settings
 from app.models.cohort import (
     CohortDefinition, CohortResult, CriteriaDefinition, 
-    CriteriaType, OperatorType
+    CriteriaType, OperatorType, SaveCohortRequest, SaveCohortResponse
 )
 from app.services.omop_service import omop_service
 
@@ -56,7 +57,8 @@ class CohortBuilder:
             patient_count=len(person_ids),
             execution_time_seconds=execution_time,
             demographics=demographics,
-            sample_patient_ids=sample_patient_ids
+            sample_patient_ids=sample_patient_ids,
+            sql_query=sql
         )
     
     def _build_cohort_sql(self, cohort_definition: CohortDefinition) -> str:
@@ -325,6 +327,58 @@ class CohortBuilder:
         """
         
         return sql
+    
+    def save_cohort_definition(self, request: SaveCohortRequest) -> SaveCohortResponse:
+        """
+        Save a cohort definition to the cohort_definition table.
+        
+        This method:
+        1. Gets the next cohort_definition_id by incrementing the max value
+        2. Inserts a new row into cohort_definition table
+        3. Returns the saved cohort information
+        """
+        logger.info(f"Saving cohort definition: {request.cohort_definition_name}")
+        
+        # Get the next cohort_definition_id
+        max_id_query = f"SELECT COALESCE(MAX(cohort_definition_id), 0) FROM {self.schema}.cohort_definition"
+        max_id = db.execute_scalar(max_id_query)
+        next_id = max_id + 1
+        
+        # Get current date in YYYY-MM-DD format
+        current_date = date.today().strftime('%Y-%m-%d')
+        
+        # Build INSERT statement
+        insert_sql = f"""
+        INSERT INTO {self.schema}.cohort_definition (
+            cohort_definition_id,
+            cohort_definition_name,
+            cohort_definition_description,
+            definition_type_concept_id,
+            cohort_definition_syntax,
+            subject_concept_id,
+            cohort_initiation_date
+        ) VALUES (
+            {next_id},
+            '{request.cohort_definition_name.replace("'", "''")}',
+            '{request.cohort_definition_description.replace("'", "''")}',
+            {next_id},
+            '{request.cohort_definition_syntax.replace("'", "''")}',
+            {next_id},
+            '{current_date}'
+        )
+        """
+        
+        # Execute the INSERT
+        db.execute_query(insert_sql)
+        
+        logger.info(f"Successfully saved cohort definition with ID: {next_id}")
+        
+        return SaveCohortResponse(
+            cohort_definition_id=next_id,
+            cohort_definition_name=request.cohort_definition_name,
+            cohort_definition_description=request.cohort_definition_description,
+            cohort_initiation_date=current_date
+        )
 
 
 cohort_builder = CohortBuilder()

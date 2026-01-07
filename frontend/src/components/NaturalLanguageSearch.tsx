@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { naturalLanguageQuery, NaturalLanguageResponse } from '../services/api';
+import { naturalLanguageQuery, NaturalLanguageResponse, saveCohortDefinition } from '../services/api';
 import CohortResults from './CohortResults';
 import './NaturalLanguageSearch.css';
 
@@ -10,6 +10,7 @@ const NaturalLanguageSearch: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [savedCohortId, setSavedCohortId] = useState<number | null>(null);
 
@@ -45,34 +46,110 @@ const NaturalLanguageSearch: React.FC = () => {
     setQuery(example);
   };
 
-  const handleSaveCohort = () => {
+  const handleSaveCohort = async () => {
+    if (!response) return;
+    
     setIsSaving(true);
     setSaveSuccess(false);
+    setSaveError(null);
     
-    // Generate random cohort_definition_id between 1 and 100000
-    const cohortId = Math.floor(Math.random() * 100000) + 1;
-    
-    // Simulate saving the cohort definition
-    setTimeout(() => {
+    try {
+      // Use cohort_definition if available, otherwise use the query as the name
+      const cohortName = response.cohort_definition?.name || `GenAI Query: ${query.substring(0, 50)}${query.length > 50 ? '...' : ''}`;
+      const cohortDescription = response.cohort_definition?.description || response.explanation;
+      
+      // Call the real API to save the cohort definition
+      const saveResponse = await saveCohortDefinition(
+        cohortName,
+        cohortDescription,
+        response.sql_generated
+      );
+      
       setIsSaving(false);
       setSaveSuccess(true);
-      setSavedCohortId(cohortId);
+      setSavedCohortId(saveResponse.cohort_definition_id);
       
       // Hide success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
         setSavedCohortId(null);
       }, 3000);
-    }, 1000);
+    } catch (err) {
+      setIsSaving(false);
+      setSaveError(err instanceof Error ? err.message : 'Failed to save cohort definition');
+      console.error('Error saving cohort:', err);
+    }
+  };
+
+  const downloadCSV = (csvContent: string, filename: string) => {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const escapeCSVField = (field: any): string => {
+    if (field === null || field === undefined) return '';
+    const stringField = String(field);
+    // Escape quotes and wrap in quotes if contains comma, quote, or newline
+    if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+      return `"${stringField.replace(/"/g, '""')}"`;
+    }
+    return stringField;
   };
 
   const handleExportResults = () => {
-    setExportSuccess(true);
+    if (!response) return;
     
-    // Simulate export
-    setTimeout(() => {
-      setExportSuccess(false);
-    }, 3000);
+    try {
+      let csvContent = '';
+      
+      // Add query information header
+      csvContent += 'GenAI Query Results\n';
+      csvContent += `Query,${escapeCSVField(query)}\n`;
+      csvContent += `Result Count,${response.result_count}\n`;
+      csvContent += '\n';
+      
+      // Export query results if available
+      if (response.query_results && response.query_results.length > 0) {
+        // Get column headers
+        const headers = Object.keys(response.query_results[0]);
+        csvContent += headers.map(escapeCSVField).join(',') + '\n';
+        
+        // Add data rows
+        response.query_results.forEach((row) => {
+          const values = headers.map(header => escapeCSVField(row[header]));
+          csvContent += values.join(',') + '\n';
+        });
+      } else {
+        csvContent += 'No detailed results available\n';
+        csvContent += `Total Count: ${response.result_count}\n`;
+      }
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const queryPrefix = query.substring(0, 30).replace(/[^a-z0-9]/gi, '_');
+      const filename = `genai_query_${queryPrefix}_${timestamp}.csv`;
+      
+      // Trigger download
+      downloadCSV(csvContent, filename);
+      
+      // Show success message
+      setExportSuccess(true);
+      setTimeout(() => {
+        setExportSuccess(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV file');
+    }
   };
 
   return (
@@ -239,6 +316,12 @@ const NaturalLanguageSearch: React.FC = () => {
               {exportSuccess && (
                 <div className="success-message">
                   ✅ Query results have been exported successfully!
+                </div>
+              )}
+
+              {saveError && (
+                <div className="error-message">
+                  ❌ Error: {saveError}
                 </div>
               )}
             </div>

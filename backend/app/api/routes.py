@@ -3,7 +3,7 @@ from typing import List, Optional
 import logging
 from app.models.cohort import (
     ConceptSearchRequest, Concept, CohortDefinition, CohortResult,
-    NaturalLanguageQuery, NaturalLanguageResponse
+    NaturalLanguageQuery, NaturalLanguageResponse, SaveCohortRequest, SaveCohortResponse
 )
 from app.models.prescriber import (
     PrescriberProfile, PrescriberMetrics, DrugPrescriberAnalytics,
@@ -98,6 +98,22 @@ async def preview_cohort_count(cohort_definition: CohortDefinition):
         return {"count": count}
     except Exception as e:
         logger.error(f"Error previewing cohort: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/cohorts/save", response_model=SaveCohortResponse)
+async def save_cohort_definition(request: SaveCohortRequest):
+    """
+    Save a cohort definition to the cohort_definition table.
+    
+    Stores the cohort name, description, and SQL query used to generate it.
+    Returns the auto-generated cohort_definition_id.
+    """
+    try:
+        response = cohort_builder.save_cohort_definition(request)
+        return response
+    except Exception as e:
+        logger.error(f"Error saving cohort definition: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

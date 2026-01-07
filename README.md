@@ -165,7 +165,7 @@ Comprehensive competitive intelligence and market dynamics:
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│                      Frontend (React)                  │
+│                    Frontend (React)                    │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
 │  │   Cohort     │  │  Prescriber  │  │ Market Share │  │
 │  │   Builder    │  │  Analytics   │  │  Analytics   │  │
@@ -179,10 +179,10 @@ Comprehensive competitive intelligence and market dynamics:
                             │
          ┌──────────────────┼──────────────────┐
          │                  │                  │
-    ┌────▼─────┐    ┌──────▼──────┐    ┌─────▼──────┐
-    │  Cohort  │    │  Prescriber │    │   Market   │
-    │  Service │    │   Service   │    │   Share    │
-    └────┬─────┘    └──────┬──────┘    └─────┬──────┘
+    ┌────▼─────┐     ┌──────▼──────┐     ┌─────▼──────┐
+    │  Cohort  │     │  Prescriber │     │   Market   │
+    │  Service │     │   Service   │     │   Share    │
+    └────┬─────┘     └──────┬──────┘     └─────┬──────┘
          │                  │                  │
          └──────────────────┼──────────────────┘
                             │

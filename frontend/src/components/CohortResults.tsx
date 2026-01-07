@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CohortResult } from '../services/api';
+import { CohortResult, saveCohortDefinition } from '../services/api';
 import './CohortResults.css';
 
 interface Props {
@@ -7,40 +7,113 @@ interface Props {
 }
 
 const CohortResults: React.FC<Props> = ({ result }) => {
-  const { patient_count, execution_time_seconds, demographics, sample_patient_ids } = result;
+  const { cohort_definition, patient_count, execution_time_seconds, demographics, sample_patient_ids, sql_query } = result;
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [savedCohortId, setSavedCohortId] = useState<number | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleSaveCohort = () => {
+  const handleSaveCohort = async () => {
     setIsSaving(true);
     setSaveSuccess(false);
+    setSaveError(null);
     
-    // Generate random cohort_definition_id between 1 and 100000
-    const cohortId = Math.floor(Math.random() * 100000) + 1;
-    
-    // Simulate saving the cohort definition
-    setTimeout(() => {
+    try {
+      // Call the real API to save the cohort definition
+      const response = await saveCohortDefinition(
+        cohort_definition.name,
+        cohort_definition.description || '',
+        sql_query || ''
+      );
+      
       setIsSaving(false);
       setSaveSuccess(true);
-      setSavedCohortId(cohortId);
+      setSavedCohortId(response.cohort_definition_id);
       
       // Hide success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
         setSavedCohortId(null);
       }, 3000);
-    }, 1000);
+    } catch (error) {
+      setIsSaving(false);
+      setSaveError(error instanceof Error ? error.message : 'Failed to save cohort definition');
+      console.error('Error saving cohort:', error);
+    }
+  };
+
+  const downloadCSV = (csvContent: string, filename: string) => {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleExportPatients = () => {
-    setExportSuccess(true);
-    
-    // Simulate export
-    setTimeout(() => {
-      setExportSuccess(false);
-    }, 3000);
+    try {
+      // Create CSV content
+      let csvContent = '';
+      
+      // Add cohort header information
+      csvContent += 'Cohort Export\n';
+      csvContent += `Cohort Name,${cohort_definition.name}\n`;
+      csvContent += `Description,${cohort_definition.description || 'N/A'}\n`;
+      csvContent += `Total Patients,${patient_count}\n`;
+      csvContent += `Execution Time,${execution_time_seconds.toFixed(2)}s\n`;
+      csvContent += '\n';
+      
+      // Add demographics if available
+      if (demographics && demographics.gender_distribution) {
+        csvContent += 'Gender Distribution\n';
+        csvContent += 'Gender,Count\n';
+        demographics.gender_distribution.forEach((item: any) => {
+          csvContent += `${item.gender},${item.count}\n`;
+        });
+        csvContent += '\n';
+      }
+      
+      if (demographics && demographics.age_stats) {
+        csvContent += 'Age Statistics\n';
+        csvContent += 'Metric,Value\n';
+        csvContent += `Mean Age,${demographics.age_stats.mean?.toFixed(1) || 0}\n`;
+        csvContent += `Min Age,${demographics.age_stats.min || 0}\n`;
+        csvContent += `Max Age,${demographics.age_stats.max || 0}\n`;
+        csvContent += '\n';
+      }
+      
+      // Add sample patient IDs
+      if (sample_patient_ids && sample_patient_ids.length > 0) {
+        csvContent += 'Sample Patient IDs\n';
+        csvContent += 'Patient ID\n';
+        sample_patient_ids.forEach((id) => {
+          csvContent += `${id}\n`;
+        });
+      }
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const filename = `cohort_${cohort_definition.name.replace(/[^a-z0-9]/gi, '_')}_${timestamp}.csv`;
+      
+      // Trigger download
+      downloadCSV(csvContent, filename);
+      
+      // Show success message
+      setExportSuccess(true);
+      setTimeout(() => {
+        setExportSuccess(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      alert('Failed to export CSV file');
+    }
   };
 
   return (
@@ -146,6 +219,12 @@ const CohortResults: React.FC<Props> = ({ result }) => {
       {exportSuccess && (
         <div className="success-message">
           ✅ Patient list has been exported successfully!
+        </div>
+      )}
+
+      {saveError && (
+        <div className="error-message">
+          ❌ Error: {saveError}
         </div>
       )}
     </div>
