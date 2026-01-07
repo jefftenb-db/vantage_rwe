@@ -209,3 +209,16 @@
   }
 }
 
+.error-message {
+  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  color: white;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  margin-top: 1.5rem;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+  animation: slideIn 0.3s ease-out;
+}
+

@@ -52,6 +52,7 @@ export interface CohortResult {
   execution_time_seconds: number;
   demographics?: any;
   sample_patient_ids?: number[];
+  sql_query?: string;
 }
 
 export interface NaturalLanguageResponse {
@@ -156,6 +157,19 @@ export const buildCohort = async (cohortDefinition: CohortDefinition): Promise<C
 export const previewCohortCount = async (cohortDefinition: CohortDefinition): Promise<number> => {
   const response = await api.post('/cohorts/preview-count', cohortDefinition);
   return response.data.count;
+};
+
+export const saveCohortDefinition = async (
+  cohortDefinitionName: string,
+  cohortDefinitionDescription: string,
+  cohortDefinitionSyntax: string
+): Promise<{ cohort_definition_id: number; cohort_definition_name: string; cohort_definition_description: string; cohort_initiation_date: string }> => {
+  const response = await api.post('/cohorts/save', {
+    cohort_definition_name: cohortDefinitionName,
+    cohort_definition_description: cohortDefinitionDescription,
+    cohort_definition_syntax: cohortDefinitionSyntax,
+  });
+  return response.data;
 };
 
 export const naturalLanguageQuery = async (query: string): Promise<NaturalLanguageResponse> => {

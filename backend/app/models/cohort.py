@@ -82,6 +82,9 @@ class CohortResult(BaseModel):
     
     # Sample patient IDs
     sample_patient_ids: Optional[List[int]] = None
+    
+    # SQL query used to generate the cohort
+    sql_query: Optional[str] = None
 
 
 class ConceptSearchRequest(BaseModel):
@@ -121,4 +124,21 @@ class NaturalLanguageResponse(BaseModel):
     result_count: int
     explanation: str
     query_results: Optional[List[Dict[str, Any]]] = Field(default=None, description="Actual query result rows")
+
+
+class SaveCohortRequest(BaseModel):
+    """Request to save a cohort definition to the database."""
+    
+    cohort_definition_name: str = Field(description="Name of the cohort definition")
+    cohort_definition_description: str = Field(description="Description of the cohort definition")
+    cohort_definition_syntax: str = Field(description="SQL query used to generate the cohort")
+
+
+class SaveCohortResponse(BaseModel):
+    """Response from saving a cohort definition."""
+    
+    cohort_definition_id: int = Field(description="Auto-generated ID of the saved cohort definition")
+    cohort_definition_name: str
+    cohort_definition_description: str
+    cohort_initiation_date: str = Field(description="Date the cohort was saved (YYYY-MM-DD)")
 

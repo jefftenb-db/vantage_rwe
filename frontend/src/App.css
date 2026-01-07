@@ -1,6 +1,6 @@
 .App {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #b2c0ff 0%, #7588e0 100%);
   padding-bottom: 50px;
 }
 
@@ -75,9 +75,9 @@
 
 /* Loading spinner */
 .spinner {
-  border: 3px solid rgba(102, 126, 234, 0.1);
+  border: 3px solid rgba(234, 102, 102, 0.1);
   border-radius: 50%;
-  border-top: 3px solid #667eea;
+  border-top: 3px solid #ea6666;
   width: 40px;
   height: 40px;
   animation: spin 1s linear infinite;
