@@ -336,7 +336,9 @@ class MarketShareService:
             GROUP BY de.drug_concept_id, c.concept_name
         ),
         market_totals AS (
-            SELECT SUM(total_prescriptions) as total_rx
+            SELECT 
+                SUM(total_prescriptions) as total_rx,
+                SUM(total_patients) as total_patients
             FROM drug_volumes
         )
         SELECT 
@@ -344,7 +346,8 @@ class MarketShareService:
             dv.drug_name,
             dv.total_prescriptions,
             dv.total_patients,
-            ROUND(dv.total_prescriptions * 100.0 / mt.total_rx, 2) as market_share,
+            ROUND(dv.total_prescriptions * 100.0 / mt.total_rx, 2) as market_share_by_prescriptions,
+            ROUND(dv.total_patients * 100.0 / mt.total_patients, 2) as market_share_by_patients,
             ROW_NUMBER() OVER (ORDER BY dv.total_prescriptions DESC) as rank
         FROM drug_volumes dv
         CROSS JOIN market_totals mt
@@ -369,9 +372,9 @@ class MarketShareService:
             
             # Calculate competitive metrics
             leader = results[0]  # Top drug by Rx
-            share_gap_to_leader = leader['market_share'] - your_drug.market_share_by_prescriptions
+            share_gap_to_leader = float(leader['market_share_by_prescriptions']) - your_drug.market_share_by_prescriptions
             
-            top_3_total = sum(r['market_share'] for r in results[:3])
+            top_3_total = sum(float(r['market_share_by_prescriptions']) for r in results[:3])
             share_of_top_3 = round(your_drug.market_share_by_prescriptions / top_3_total * 100, 2) if top_3_total > 0 else 0
             
             return CompetitivePositioning(

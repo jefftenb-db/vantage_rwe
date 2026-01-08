@@ -331,7 +331,7 @@ const MarketShareAnalytics: React.FC = () => {
               >
                 <strong>{concept.concept_name}</strong>
                 <span className="concept-meta">
-                  {concept.vocabulary_id} | {concept.concept_code}
+                  {concept.vocabulary_id} | {concept.concept_id} | {concept.concept_code}
                 </span>
               </div>
             ))}
