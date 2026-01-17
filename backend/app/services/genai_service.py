@@ -1,10 +1,12 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import logging
 import time
 import requests
+from datetime import datetime
 from app.models.cohort import (
     NaturalLanguageQuery, NaturalLanguageResponse, 
-    CohortDefinition, CriteriaDefinition, CriteriaType
+    CohortDefinition, CriteriaDefinition, CriteriaType,
+    ConversationMessage
 )
 from app.services.omop_service import omop_service
 from app.services.cohort_builder import cohort_builder
@@ -31,6 +33,12 @@ class GenAIService:
         # OAuth Service Principal credentials (required)
         self.client_id = settings.databricks_client_id
         self.client_secret = settings.databricks_client_secret
+        
+        # In-memory conversation history storage (in production, use a database or cache)
+        self.conversation_histories: Dict[str, List[ConversationMessage]] = {}
+        
+        # In-memory status tracking for active queries
+        self.query_statuses: Dict[str, str] = {}
         
         logger.info("GenAI service using OAuth M2M authentication")
     
@@ -68,10 +76,10 @@ class GenAIService:
         Process a natural language query using Databricks Genie API.
         
         This uses the Genie Conversation API to:
-        1. Start a conversation with the Genie Space
+        1. Start a new conversation OR continue an existing one
         2. Poll for the generated SQL response
         3. Execute the SQL to get patient counts
-        4. Return structured results
+        4. Return structured results with conversation history
         """
         
         if not self.genie_space_id:
@@ -80,33 +88,75 @@ class GenAIService:
             return self._fallback_rule_based_query(nl_query)
         
         try:
-            # Step 1: Start a conversation with Genie
-            conversation_data = self._start_genie_conversation(nl_query.query)
+            # Check if this is a continuation of an existing conversation
+            conversation_id = nl_query.conversation_id
+            
+            if conversation_id:
+                # Continue existing conversation
+                logger.info(f"Continuing conversation {conversation_id}")
+                conversation_data = self._continue_genie_conversation(conversation_id, nl_query.query)
+            else:
+                # Start a new conversation
+                logger.info("Starting new conversation")
+                conversation_data = self._start_genie_conversation(nl_query.query)
             
             if not conversation_data:
-                logger.error("Failed to start Genie conversation. Falling back to rule-based pattern matching.")
+                logger.error("Failed to start/continue Genie conversation. Falling back to rule-based pattern matching.")
                 logger.info("To use Genie AI, verify: 1) Genie Space ID is correct, 2) Token has permission, 3) Space exists in workspace")
                 return self._fallback_rule_based_query(nl_query)
             
-            conversation_id = conversation_data['conversation']['id']
-            message_id = conversation_data['message']['id']
+            # Extract conversation and message IDs
+            if not conversation_id:
+                # New conversation
+                conversation_id = conversation_data['conversation']['id']
+                message_id = conversation_data['message']['id']
+            else:
+                # Continued conversation
+                message_id = conversation_data['id']
             
-            # Step 2: Poll for the message to complete
+            # Store the message_id for status tracking
+            status_key = f"{conversation_id}:{message_id}"
+            self.query_statuses[status_key] = "SUBMITTED"
+            
+            # Poll for the message to complete
             message_result = self._poll_message_status(conversation_id, message_id)
+            
+            # Clean up status tracking
+            if status_key in self.query_statuses:
+                del self.query_statuses[status_key]
             
             if not message_result or message_result.get('status') != 'COMPLETED':
                 logger.error(f"Genie message did not complete successfully: {message_result.get('status')}")
                 return self._fallback_rule_based_query(nl_query)
             
-            # Step 3: Extract SQL and explanation from attachments
+            # Extract SQL, explanation, and suggested questions from attachments
             sql_generated = ""
-            explanation = message_result.get('attachments', [{}])[0].get('query', {}).get('query', "") if message_result.get('attachments') else ""
-            genie_text = message_result.get('attachments', [{}])[0].get('text', {}).get('content', "") if message_result.get('attachments') else ""
+            explanation = ""
+            genie_text = ""
+            suggested_questions = []
             
-            if not sql_generated:
+            attachments = message_result.get('attachments', [])
+            if attachments:
+                for attachment in attachments:
+                    # Extract SQL from query attachment
+                    if 'query' in attachment and attachment['query'].get('query'):
+                        sql_generated = attachment['query']['query']
+                    # Extract text explanation
+                    if 'text' in attachment and attachment['text'].get('content'):
+                        genie_text = attachment['text']['content']
+                    # Extract suggested follow-up questions
+                    if 'suggested_questions' in attachment:
+                        # Handle both dict format {'questions': [...]} and direct list format
+                        sq = attachment['suggested_questions']
+                        if isinstance(sq, dict) and 'questions' in sq:
+                            suggested_questions = sq['questions']
+                        elif isinstance(sq, list):
+                            suggested_questions = sq
+            
+            if not sql_generated and explanation:
                 sql_generated = explanation
             
-            # Step 4: Try to execute the SQL to get results
+            # Execute the SQL to get results
             result_count = 0
             query_results = None
             try:
@@ -126,13 +176,32 @@ class GenAIService:
             
             explanation_text = genie_text if genie_text else f"Genie generated SQL query for: {nl_query.query}"
             
+            # Update conversation history
+            self._add_to_conversation_history(
+                conversation_id=conversation_id,
+                user_query=nl_query.query,
+                message_id=message_id,
+                assistant_response=explanation_text,
+                sql_generated=sql_generated,
+                result_count=result_count,
+                query_results=query_results,
+                suggested_questions=suggested_questions
+            )
+            
+            # Get full conversation history
+            conversation_history = self.conversation_histories.get(conversation_id, [])
+            
             return NaturalLanguageResponse(
                 query=nl_query.query,
                 sql_generated=sql_generated,
                 cohort_definition=cohort_def,
                 result_count=result_count,
                 explanation=explanation_text,
-                query_results=query_results
+                query_results=query_results,
+                conversation_id=conversation_id,
+                message_id=message_id,
+                conversation_history=conversation_history,
+                suggested_questions=suggested_questions
             )
             
         except Exception as e:
@@ -181,6 +250,45 @@ class GenAIService:
             logger.error(f"If you see SSL errors, try setting DATABRICKS_VERIFY_SSL=false in your .env file")
             return None
     
+    def _continue_genie_conversation(self, conversation_id: str, question: str) -> Optional[Dict[str, Any]]:
+        """
+        Continue an existing Genie conversation.
+        
+        POST /api/2.0/genie/spaces/{space_id}/conversations/{conversation_id}/messages
+        """
+        url = f"{self.api_base_url}/spaces/{self.genie_space_id}/conversations/{conversation_id}/messages"
+        
+        # Get access token (OAuth or PAT)
+        access_token = self._get_access_token()
+        if not access_token:
+            logger.error("No access token available for Genie API")
+            return None
+        
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "content": question
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers, verify=settings.databricks_verify_ssl)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.error(f"Conversation not found: {conversation_id}")
+            elif e.response.status_code == 403:
+                logger.error(f"Access denied to conversation: {conversation_id}")
+            else:
+                logger.error(f"HTTP error continuing Genie conversation: {e}")
+            return None
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error continuing Genie conversation: {e}")
+            return None
+    
     def _poll_message_status(self, conversation_id: str, message_id: str, max_wait_seconds: int = 120) -> Optional[Dict[str, Any]]:
         """
         Poll for message completion status.
@@ -202,6 +310,7 @@ class GenAIService:
         start_time = time.time()
         poll_interval = 2  # Start with 2 seconds
         max_poll_interval = 10  # Cap at 10 seconds
+        status_key = f"{conversation_id}:{message_id}"
         
         while time.time() - start_time < max_wait_seconds:
             try:
@@ -212,6 +321,9 @@ class GenAIService:
                 
                 status = message_data.get('status')
                 logger.info(f"Genie message status: {status}")
+                
+                # Update status for frontend polling
+                self.query_statuses[status_key] = status
                 
                 if status in ['COMPLETED', 'FAILED', 'CANCELLED']:
                     return message_data
@@ -229,6 +341,50 @@ class GenAIService:
         
         logger.warning(f"Genie message polling timed out after {max_wait_seconds} seconds")
         return None
+    
+    def get_query_status(self, conversation_id: str, message_id: str) -> Optional[str]:
+        """Get the current status of a query being processed."""
+        status_key = f"{conversation_id}:{message_id}"
+        return self.query_statuses.get(status_key)
+    
+    def _add_to_conversation_history(
+        self,
+        conversation_id: str,
+        user_query: str,
+        message_id: str,
+        assistant_response: str,
+        sql_generated: Optional[str] = None,
+        result_count: Optional[int] = None,
+        query_results: Optional[List[Dict[str, Any]]] = None,
+        suggested_questions: Optional[List[str]] = None
+    ):
+        """Add a message exchange to the conversation history."""
+        if conversation_id not in self.conversation_histories:
+            self.conversation_histories[conversation_id] = []
+        
+        # Add user message
+        self.conversation_histories[conversation_id].append(
+            ConversationMessage(
+                message_id=f"user_{message_id}",
+                role="user",
+                content=user_query,
+                timestamp=datetime.utcnow().isoformat()
+            )
+        )
+        
+        # Add assistant message
+        self.conversation_histories[conversation_id].append(
+            ConversationMessage(
+                message_id=message_id,
+                role="assistant",
+                content=assistant_response,
+                sql_generated=sql_generated,
+                result_count=result_count,
+                query_results=query_results,
+                suggested_questions=suggested_questions,
+                timestamp=datetime.utcnow().isoformat()
+            )
+        )
     
     def _fallback_rule_based_query(self, nl_query: NaturalLanguageQuery) -> NaturalLanguageResponse:
         """

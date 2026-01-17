@@ -51,11 +51,11 @@ const DatabaseStats: React.FC = () => {
   if (!stats) return null;
 
   const statItems = [
-    { label: 'Total Patients', value: stats.total_patients?.toLocaleString() || '0', icon: '👥' },
-    { label: 'Unique Conditions', value: stats.unique_conditions?.toLocaleString() || '0', icon: '🏥' },
-    { label: 'Unique Drugs', value: stats.unique_drugs?.toLocaleString() || '0', icon: '💊' },
-    { label: 'Unique Procedures', value: stats.unique_procedures?.toLocaleString() || '0', icon: '⚕️' },
-    { label: 'Total Visits', value: stats.total_visits?.toLocaleString() || '0', icon: '📋' },
+    { label: 'Patients', value: stats.total_patients?.toLocaleString() || '0', icon: '👥' },
+    { label: 'Conditions', value: stats.unique_conditions?.toLocaleString() || '0', icon: '🏥' },
+    { label: 'Drugs', value: stats.unique_drugs?.toLocaleString() || '0', icon: '💊' },
+    { label: 'Procedures', value: stats.unique_procedures?.toLocaleString() || '0', icon: '⚕️' },
+    { label: 'Visits', value: stats.total_visits?.toLocaleString() || '0', icon: '📋' },
   ];
 
   return (

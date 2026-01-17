@@ -62,6 +62,21 @@ export interface NaturalLanguageResponse {
   result_count: number;
   explanation: string;
   query_results?: Array<Record<string, any>>;
+  conversation_id?: string;
+  message_id?: string;
+  conversation_history?: ConversationMessage[];
+  suggested_questions?: string[];
+}
+
+export interface ConversationMessage {
+  message_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sql_generated?: string;
+  result_count?: number;
+  query_results?: Array<Record<string, any>>;
+  suggested_questions?: string[];
+  timestamp: string;
 }
 
 // Prescriber Analytics Types
@@ -172,8 +187,22 @@ export const saveCohortDefinition = async (
   return response.data;
 };
 
-export const naturalLanguageQuery = async (query: string): Promise<NaturalLanguageResponse> => {
-  const response = await api.post('/genai/query', { query });
+export const naturalLanguageQuery = async (
+  query: string,
+  conversationId?: string
+): Promise<NaturalLanguageResponse> => {
+  const response = await api.post('/genai/query', { 
+    query,
+    conversation_id: conversationId 
+  });
+  return response.data;
+};
+
+export const getQueryStatus = async (
+  conversationId: string,
+  messageId: string
+): Promise<{ status: string }> => {
+  const response = await api.get(`/genai/status/${conversationId}/${messageId}`);
   return response.data;
 };
 
