@@ -124,12 +124,34 @@ async def natural_language_query(nl_query: NaturalLanguageQuery):
     
     Uses Databricks GenAI features to understand the query and
     automatically generate cohort criteria.
+    
+    Supports conversation continuation by providing a conversation_id.
+    If no conversation_id is provided, a new conversation is started.
     """
     try:
         response = genai_service.process_natural_language_query(nl_query)
         return response
     except Exception as e:
         logger.error(f"Error processing natural language query: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/genai/status/{conversation_id}/{message_id}")
+async def get_query_status(conversation_id: str, message_id: str):
+    """
+    Get the current processing status of a Genie query.
+    
+    Returns status like: SUBMITTED, EXECUTING_QUERY, COMPLETED, FAILED, etc.
+    Useful for showing real-time progress to users.
+    """
+    try:
+        status = genai_service.get_query_status(conversation_id, message_id)
+        if status:
+            return {"status": status}
+        else:
+            return {"status": "UNKNOWN"}
+    except Exception as e:
+        logger.error(f"Error getting query status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

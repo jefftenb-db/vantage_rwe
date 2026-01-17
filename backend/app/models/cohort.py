@@ -113,6 +113,20 @@ class NaturalLanguageQuery(BaseModel):
     
     query: str = Field(description="Natural language query about patient cohorts")
     context: Optional[str] = Field(default=None, description="Additional context for the query")
+    conversation_id: Optional[str] = Field(default=None, description="Conversation ID for continuing an existing conversation")
+
+
+class ConversationMessage(BaseModel):
+    """A single message in a Genie conversation."""
+    
+    message_id: str
+    role: str  # 'user' or 'assistant'
+    content: str
+    sql_generated: Optional[str] = None
+    result_count: Optional[int] = None
+    query_results: Optional[List[Dict[str, Any]]] = None
+    suggested_questions: Optional[List[str]] = None
+    timestamp: str
 
 
 class NaturalLanguageResponse(BaseModel):
@@ -124,6 +138,10 @@ class NaturalLanguageResponse(BaseModel):
     result_count: int
     explanation: str
     query_results: Optional[List[Dict[str, Any]]] = Field(default=None, description="Actual query result rows")
+    conversation_id: Optional[str] = Field(default=None, description="Conversation ID for continuing the conversation")
+    message_id: Optional[str] = Field(default=None, description="Message ID of this response")
+    conversation_history: Optional[List[ConversationMessage]] = Field(default=None, description="Full conversation history")
+    suggested_questions: Optional[List[str]] = Field(default=None, description="Follow-up questions suggested by Genie")
 
 
 class SaveCohortRequest(BaseModel):
