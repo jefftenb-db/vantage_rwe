@@ -17,13 +17,38 @@ Vantage RWE is configured to run as a Databricks App with a FastAPI backend serv
 
 ## Prerequisites
 
-Before deploying, ensure you have:
+Before deploying, ensure you have completed these setup steps:
 
-- **Databricks Workspace** with Apps feature enabled
+### 1. OMOP CDM Data
 - **OMOP CDM data** loaded in your Databricks workspace
-- **SQL Warehouse or Cluster** running with access to OMOP data
-- **Personal Access Token** or service principal credentials
-- **Databricks CLI** installed (for CLI deployment)
+- Data organized in a catalog (e.g., `vantage_rwe`) and schema (e.g., `omop`)
+- Verify all required OMOP tables exist
+
+### 2. SQL Warehouse
+- **SQL Warehouse** running with access to OMOP data
+- Note the Warehouse ID (you'll need this)
+- Recommend setting auto-stop to manage costs
+
+### 3. Genie Space (Required)
+- **Genie Space created** for AI-powered natural language queries
+- Use the provided `create_genie_space.py` notebook to automate creation
+- Requires: catalog_name, schema_name, warehouse_id as parameters
+- Save the Genie Space ID output from the notebook
+
+**To create the Genie Space:**
+1. Upload `create_genie_space.py` to Databricks as a notebook
+2. Run it with your catalog, schema, and warehouse ID
+3. Copy the Genie Space ID from the output
+
+See the [Prerequisites Setup section](../README.md#-prerequisites-setup) in the main README for detailed instructions.
+
+### 4. Databricks CLI (for CLI deployment)
+- **Databricks CLI** installed locally
+- Authenticated to your workspace
+
+### 5. Service Principal (Optional for manual setup)
+- **Service principal** with appropriate permissions
+- For Databricks Apps, this is auto-created - no manual setup needed
 
 ## Production Architecture
 
