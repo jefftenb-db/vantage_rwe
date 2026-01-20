@@ -130,7 +130,9 @@ Create these secrets in Databricks secret scope `omop-app`:
 | Secret Key | Description | Required |
 |------------|-------------|----------|
 | `http_path` | SQL Warehouse HTTP path | ✅ Yes |
-| `genie_space_id` | Genie Space ID for AI queries | ⚠️ Optional |
+| `genie_space_id` | Genie Space ID for AI queries (from `create_genie_space.py` output) | ✅ Yes (for GenAI features) |
+
+**Note:** The `genie_space_id` is required for the natural language query features. Create the Genie Space using the `create_genie_space.py` notebook before deployment.
 
 **Create secrets via CLI:**
 ```bash
@@ -161,10 +163,16 @@ Configured in `app.yaml`:
 
 ### Prerequisites
 
-1. **Service Principal** with OAuth secret generated
-2. **SQL Warehouse** running with service principal access
-3. **OMOP data** accessible to service principal
-4. **(Optional) Genie Space** created and accessible
+1. **OMOP CDM data** loaded in Databricks (catalog and schema)
+2. **SQL Warehouse** running with appropriate size
+3. **Genie Space** created using `create_genie_space.py` notebook
+   - Requires: catalog_name, schema_name, warehouse_id
+   - Outputs: Genie Space ID (save this for deployment)
+4. **Service Principal** with OAuth secret generated
+5. **Service principal permissions**:
+   - `Can Use` on SQL Warehouse
+   - Access to OMOP catalog/schema
+   - Access to Genie Space
 
 ### Step 1: Create Secrets
 

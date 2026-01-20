@@ -283,26 +283,32 @@ npm start
 
 ## 🚢 Deployment Options
 
-### Development
+### Production - Databricks Apps (Recommended)
+- Deploy as Databricks App
+- Single platform deployment
+- Built-in authentication and OAuth
+- Simplified management
+- Auto-scaling via SQL Warehouse
+- No infrastructure management
+
+### Development - Local
 - Local backend + frontend
 - Direct Databricks connection
+- Hot reload for rapid development
+- Same OAuth authentication as production
 
-### Production - Cloud
+### Production - Cloud (Alternative)
 - Backend: AWS Lambda / Azure Functions / GCP Cloud Run
 - Frontend: Vercel / Netlify / S3 + CloudFront
 - Database: Databricks (existing)
+- More complex setup and management
 
-### Production - Databricks Apps
-- Deploy as Databricks App
-- Single platform deployment
-- Built-in authentication
-- Simplified management
-
-### Enterprise
+### Enterprise - Custom
 - Kubernetes deployment
 - API Gateway
 - Load balancing
-- Monitoring & alerting
+- Advanced monitoring & alerting
+- Custom security requirements
 
 ## 🎯 Next Steps & Extensions
 

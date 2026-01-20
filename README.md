@@ -6,7 +6,7 @@
 [![React 18](https://img.shields.io/badge/react-18-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104-green.svg)](https://fastapi.tiangolo.com/)
 
-A comprehensive commercial intelligence platform for pharmaceutical teams to analyze real-world healthcare data using the OHDSI OMOP Common Data Model (CDM) on Databricks.
+A comprehensive commercial intelligence platform for pharmaceutical teams to analyze real-world healthcare data using the OHDSI OMOP Common Data Model (CDM) on Databricks. Designed for seamless deployment as a Databricks App with production-ready OAuth authentication.
 
 ---
 
@@ -247,12 +247,174 @@ vantage-rwe/
 
 ### Prerequisites
 
+Before deploying, ensure you have:
+
+1. **Databricks workspace** with:
+   - **OMOP CDM data loaded** in a catalog and schema
+   - **SQL Warehouse running** with appropriate size
+   - **Service principal** with OAuth credentials and permissions
+
+2. **Genie Space created** (required for AI-powered queries):
+   - Upload `create_genie_space.py` to Databricks as a notebook
+   - Run the notebook with your catalog_name, schema_name, and warehouse_id
+   - Capture the Genie Space ID from the output
+
+3. **Databricks CLI** installed (for deployment)
+
+See the [Prerequisites Setup Guide](#-prerequisites-setup) below for detailed instructions.
+
+### Production Deployment (Recommended)
+
+Deploy Vantage RWE as a Databricks App for immediate production use:
+
+#### 1. Create Databricks Secrets
+
+Create secrets in Databricks secret scope `omop-app`:
+
+```bash
+# Create secret scope (if it doesn't exist)
+databricks secrets create-scope omop-app
+
+# Add required secrets
+databricks secrets put-secret omop-app http_path \
+  --string-value "/sql/1.0/warehouses/YOUR_WAREHOUSE_ID"
+
+# Add Genie Space ID (required for AI-powered natural language queries)
+databricks secrets put-secret omop-app genie_space_id \
+  --string-value "YOUR_GENIE_SPACE_ID"
+```
+
+**Note:** `DATABRICKS_HOST`, `DATABRICKS_CLIENT_ID`, and `DATABRICKS_CLIENT_SECRET` are automatically provided by Databricks Apps - no manual OAuth setup needed!
+
+#### 2. Deploy via CLI
+
+```bash
+# Clone the repository
+git clone https://github.com/jefftenb-db/vantage_rwe.git
+cd vantage_rwe
+
+# Sync code to workspace
+databricks sync . /Workspace/Users/you@company.com/vantage-rwe
+
+# Deploy app
+databricks apps deploy vantage-rwe \
+  --source-code-path /Workspace/Users/you@company.com/vantage-rwe
+```
+
+#### 3. Access Your App
+
+Once deployed:
+1. Go to **Compute** → **Apps** tab in Databricks
+2. Click on your app name (`vantage-rwe`)
+3. Click the **App URL** to open the application
+
+Your app will be accessible at a URL like:
+```
+https://<workspace-url>/apps/<app-id>
+```
+
+Explore the features:
+- **Cohort Builder** tab - Build patient populations
+- **GenAI Query** tab - Natural language search (requires Genie)
+- **Prescriber Analytics** tab - HCP targeting and analysis
+- **Market Share** tab - Competitive intelligence
+
+**See [Databricks App Deployment Guide](./docs/DATABRICKS_APP_DEPLOYMENT.md) for detailed deployment options including UI-based deployment.**
+
+---
+
+## 📋 Prerequisites Setup
+
+Before deploying the application, you need to prepare your Databricks environment.
+
+### Step 1: OMOP CDM Data
+
+Ensure your OMOP CDM data is loaded in Databricks:
+
+- **Catalog**: Default is `vantage_rwe` (configurable)
+- **Schema**: Default is `omop` (configurable)
+- **Required tables**: `person`, `condition_occurrence`, `drug_exposure`, `provider`, `concept`, `concept_ancestor`, and other OMOP tables
+
+Verify your data:
+```sql
+-- Run in Databricks SQL
+SHOW TABLES IN vantage_rwe.omop;
+SELECT COUNT(*) FROM vantage_rwe.omop.person;
+```
+
+### Step 2: SQL Warehouse
+
+Create or identify a SQL Warehouse for the application:
+
+1. Go to **SQL Warehouses** in Databricks
+2. Create a new warehouse or use existing
+3. Note the **Warehouse ID** from the URL or Connection Details
+4. Ensure it has **auto-stop** enabled to manage costs
+
+### Step 3: Create Genie Space (Required for AI Queries)
+
+The application uses Databricks Genie for natural language queries. Create a Genie Space using the provided automation script:
+
+#### 3.1 Upload the Notebook
+
+1. In Databricks, go to **Workspace**
+2. Navigate to your desired folder
+3. Upload `create_genie_space.py` as a notebook
+
+#### 3.2 Run the Notebook
+
+1. Open the `create_genie_space` notebook
+2. Follow the step-by-step instructions in the notebook:
+   - **Step 1**: Install databricks-sdk
+   - **Step 2**: Create widget parameters
+   - **Step 3**: Update widgets with your values:
+     - `catalog_name`: Your OMOP catalog (e.g., `vantage_rwe`)
+     - `schema_name`: Your OMOP schema (e.g., `omop`)
+     - `warehouse_id`: Your SQL Warehouse ID
+   - **Step 4**: Run the Genie Space creation
+   - **Step 5**: Capture the Genie Space ID
+
+#### 3.3 Save the Genie Space ID
+
+Copy the Genie Space ID from the output. You'll need this for deployment:
+
+```
+Genie Space ID: 
+01abc234-5678-90de-f123-456789abcdef
+```
+
+**Important:** The Genie Space is pre-configured with:
+- Key OMOP tables: person, condition_occurrence, drug_exposure, provider, concept, etc.
+- OMOP-specific instructions and example queries
+- Optimized for pharmaceutical/clinical analytics
+
+### Step 4: Service Principal Permissions
+
+Ensure your service principal (or the one that will be auto-created by Databricks Apps) has:
+
+1. **SQL Warehouse Permissions**:
+   - Go to **SQL Warehouses** → Your warehouse → **Permissions**
+   - Add service principal with `Can Use` permission
+
+2. **Data Permissions**:
+   - Grant `USE CATALOG` on your OMOP catalog
+   - Grant `USE SCHEMA` on your OMOP schema
+   - Grant `SELECT` on all OMOP tables
+
+3. **Genie Space Permissions** (automatic for Databricks Apps):
+   - Service principal will have access to the Genie Space
+
+---
+
+## 💻 Local Development Setup
+
+For local development and testing, you can run Vantage RWE on your local machine:
+
+### Prerequisites
+
 - **Python 3.9+** with pip
 - **Node.js 18+** with npm
-- **Databricks workspace** with:
-  - OMOP CDM data loaded
-  - SQL Warehouse running
-  - Service principal with OAuth credentials
+- **Databricks workspace** with OMOP CDM data and SQL Warehouse
 
 ### 1. Clone the Repository
 
@@ -261,32 +423,16 @@ git clone https://github.com/jefftenb-db/vantage_rwe.git
 cd vantage_rwe
 ```
 
-### 2. Backend Setup
+### 2. Configure Environment
+
+Create `backend/.env` file:
 
 ```bash
 cd backend
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r ../requirements.txt
-
-# Configure environment
 cp env.template .env
-# Edit .env with your Databricks OAuth credentials (see below)
-
-# Run the API server
-uvicorn app.main:app --reload --port 8000
 ```
 
-API will be available at **http://localhost:8000**  
-API Documentation at **http://localhost:8000/docs**
-
-#### Configure OAuth Credentials
-
-Edit `backend/.env`:
+Edit `backend/.env` with your Databricks OAuth credentials:
 
 ```env
 DATABRICKS_HOST=your-workspace.cloud.databricks.com
@@ -306,48 +452,70 @@ OMOP_SCHEMA=omop
 3. Go to Secrets tab → Generate secret
 4. Copy Client ID and Secret (shown only once!)
 
-### 3. Frontend Setup
+### 3. Install Dependencies
 
 ```bash
+# Python backend dependencies
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r ../requirements.txt
+cd ..
+
+# React frontend dependencies
 cd frontend
-
-# Install dependencies
 npm install
-
-# Configure environment (optional)
-cp env.template .env
-# Edit REACT_APP_API_URL if backend is not on localhost:8000
-
-# Start development server
-npm start
+cd ..
 ```
 
-Application will open at **http://localhost:3000**
+### 4. Run Development Servers
 
-### 4. Alternative: Use Development Script
-
-Or use the all-in-one development script:
+**Option A: Use the development script (recommended)**
 
 ```bash
-# From project root
 ./run_dev.sh
 ```
 
-This starts both backend (port 8000) and frontend (port 3000) with hot reload.
+This starts both servers with hot reload:
+- Backend API: **http://localhost:8000**
+- Frontend UI: **http://localhost:3000**
+- API Documentation: **http://localhost:8000/docs**
+
+**Option B: Start servers manually**
+
+```bash
+# Terminal 1 - Backend
+cd backend
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+uvicorn app.main:app --reload --port 8000
+
+# Terminal 2 - Frontend
+cd frontend
+npm start
+```
 
 ### 5. Access the Application
 
-Open your browser to **http://localhost:3000** and explore:
-- **Cohort Builder** tab - Build patient populations
-- **GenAI Query** tab - Natural language search (requires Genie)
-- **Prescriber Analytics** tab - HCP targeting and analysis
-- **Market Share** tab - Competitive intelligence
+Open your browser to **http://localhost:3000**
 
 ---
 
 ## ⚙️ Configuration
 
 ### Backend Environment Variables
+
+**For Databricks Apps (Production):**
+
+These variables are configured in `app.yaml` and automatically provided by Databricks:
+- `DATABRICKS_HOST` - Auto-provided by Databricks Apps
+- `DATABRICKS_CLIENT_ID` - Auto-provided by Databricks Apps
+- `DATABRICKS_CLIENT_SECRET` - Auto-provided by Databricks Apps
+- `DATABRICKS_HTTP_PATH` - From secret: `{{secrets/omop-app/http_path}}`
+- `DATABRICKS_GENIE_SPACE_ID` - From secret: `{{secrets/omop-app/genie_space_id}}`
+
+See [Databricks App Deployment Guide](./docs/DATABRICKS_APP_DEPLOYMENT.md) for setup details.
+
+**For Local Development:**
 
 Create `backend/.env` file (copy from `backend/env.template`):
 
@@ -379,7 +547,14 @@ DATABRICKS_VERIFY_SSL=true
 
 ### Frontend Environment Variables
 
-Create `frontend/.env` (optional):
+**For Databricks Apps (Production):**
+
+Configured automatically in `app.yaml`:
+- `REACT_APP_API_URL=/api/v1` - Relative path for same-origin requests
+
+**For Local Development:**
+
+Create `frontend/.env` (optional - defaults work for most cases):
 
 ```env
 # API endpoint (defaults to http://localhost:8000/api/v1)
@@ -388,18 +563,19 @@ REACT_APP_API_URL=http://localhost:8000/api/v1
 
 ### Authentication
 
-This application uses **OAuth M2M (Machine-to-Machine)** authentication with Databricks service principals:
+This application uses **OAuth M2M (Machine-to-Machine)** authentication with Databricks service principals - the same authentication method in both production and local development:
 
+- ✅ Production-ready security (recommended by Databricks)
 - ✅ Automatic token generation and refresh
 - ✅ Tokens valid for 1 hour
-- ✅ Same authentication in local and production
-- ✅ Production-grade security
+- ✅ Auto-provided by Databricks Apps (no manual setup in production)
+- ✅ Same authentication flow everywhere
 
 **Why OAuth vs Personal Tokens?**
 - Better security (scoped to service principal)
 - Auto-refresh (no expired token issues)
 - Audit trail (actions tied to service principal)
-- Production-ready (recommended by Databricks)
+- Required for Databricks Apps deployment
 
 ---
 
@@ -497,11 +673,11 @@ The platform leverages these OMOP tables:
 
 ## 🎓 Documentation
 
-### Deployment & Setup
-- **[Databricks App Deployment](./docs/DATABRICKS_APP_DEPLOYMENT.md)** - Deploy to Databricks Apps
-- **[Deployment Setup](./DEPLOYMENT_SETUP.md)** - Current deployment configuration
+### Deployment & Setup (Start Here)
+- **[Databricks App Deployment](./docs/DATABRICKS_APP_DEPLOYMENT.md)** - **Production deployment guide** (RECOMMENDED)
+- **[Deployment Setup](./DEPLOYMENT_SETUP.md)** - Deployment configuration overview
 - **[OAuth Setup](./docs/OAUTH_SETUP.md)** - OAuth M2M authentication guide
-- **[Environment Setup](./docs/CREATE_ENV.md)** - Environment configuration
+- **[Environment Setup](./docs/CREATE_ENV.md)** - Environment configuration for local development
 
 ### Features & Usage
 - **[Prescriber Analytics](./docs/PRESCRIBER_ANALYTICS.md)** - HCP targeting guide
@@ -513,38 +689,38 @@ The platform leverages these OMOP tables:
 
 ---
 
-## ☁️ Databricks Apps Deployment
+## 🏭 Production Deployment Details
 
-Deploy Vantage RWE as a Databricks App for production use:
+### Deployment Architecture
 
-### Quick Deploy
+**Databricks Apps (Recommended):**
+- Single FastAPI server on port 8000
+- Serves pre-built React static files
+- OAuth M2M authentication with service principal
+- No CORS issues (same origin)
+- Auto-scaling via SQL Warehouse
+- Built-in monitoring and logs
 
-1. **Create secrets** in Databricks secret scope `omop-app`:
-   ```bash
-   databricks secrets put-secret omop-app http_path \
-     --string-value "/sql/1.0/warehouses/YOUR_WAREHOUSE_ID"
-   
-   databricks secrets put-secret omop-app genie_space_id \
-     --string-value "YOUR_GENIE_SPACE_ID"
-   ```
+### Auto-Provided Environment Variables
 
-2. **Deploy via CLI:**
-   ```bash
-   databricks sync . /Workspace/Users/you@company.com/vantage-rwe
-   databricks apps deploy vantage-rwe \
-     --source-code-path /Workspace/Users/you@company.com/vantage-rwe
-   ```
-
-3. **Access your app** at the Databricks Apps URL
-
-### Auto-Provided by Databricks Apps
+When deploying as a Databricks App, these are automatically provided:
 - `DATABRICKS_HOST` - Workspace hostname
 - `DATABRICKS_CLIENT_ID` - Service principal client ID
 - `DATABRICKS_CLIENT_SECRET` - OAuth secret
 
 **No manual OAuth setup needed in production!**
 
-See [Databricks App Deployment Guide](./docs/DATABRICKS_APP_DEPLOYMENT.md) for details.
+### Deployment Options
+
+1. **Databricks CLI** - Automated deployment (see Quick Start above)
+2. **Databricks UI** - Manual upload and deployment
+3. **CI/CD Integration** - Automated pipelines
+
+See [Databricks App Deployment Guide](./docs/DATABRICKS_APP_DEPLOYMENT.md) for:
+- UI-based deployment walkthrough
+- Troubleshooting common issues
+- Advanced configuration options
+- Updating deployed apps
 
 ---
 
@@ -617,21 +793,25 @@ cd frontend
 npm run lint
 ```
 
-### Building for Production
+### Testing Production Build Locally
+
+To test the production build locally before deploying to Databricks Apps:
 
 ```bash
 # Build React frontend to static files
 npm run build
 
-# Production server (single FastAPI server serves API + static files)
+# Start production server (same architecture as Databricks Apps)
 npm start
 ```
 
-**Production Architecture:**
-- Single FastAPI server on port 8000
+This runs a single FastAPI server on port 8000 that:
 - Serves API at `/api/v1/*`
 - Serves React static files for all other routes
+- Uses OAuth authentication (same as production)
 - No CORS issues (same origin)
+
+Access at **http://localhost:8000** (note: port 8000, not 3000)
 
 ---
 

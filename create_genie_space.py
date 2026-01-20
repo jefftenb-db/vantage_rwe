@@ -1,12 +1,33 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PLEASE READ
-# MAGIC ## Follow the following 5 steps.  Be sure to update the widget values before running steps 4 and 5
-# MAGIC 1) pip install
-# MAGIC 2) Create widgets
-# MAGIC 3) Update widget values
-# MAGIC 4) Create Genie Space
-# MAGIC 5) Capture Genie Space ID
+# MAGIC # Create Genie Space for Vantage RWE
+# MAGIC 
+# MAGIC This notebook automates the creation of a Databricks Genie Space optimized for OMOP CDM analytics.
+# MAGIC 
+# MAGIC ## Prerequisites
+# MAGIC Before running this notebook, ensure you have:
+# MAGIC - **OMOP CDM data** loaded in a catalog and schema
+# MAGIC - **SQL Warehouse** running and accessible
+# MAGIC - **Warehouse ID** from your SQL Warehouse connection details
+# MAGIC 
+# MAGIC ## Required Parameters
+# MAGIC You will need to provide three parameters in Step 3:
+# MAGIC - **catalog_name**: Your OMOP catalog name (default: `vantage_rwe`)
+# MAGIC - **schema_name**: Your OMOP schema name (default: `omop`)
+# MAGIC - **warehouse_id**: Your SQL Warehouse ID (find in SQL Warehouse → Connection Details)
+# MAGIC 
+# MAGIC ## Steps
+# MAGIC Follow these 5 steps in order:
+# MAGIC 1. Install dependencies and restart Python
+# MAGIC 2. Create widget parameters
+# MAGIC 3. **UPDATE** widget values with your configuration
+# MAGIC 4. Create Genie Space
+# MAGIC 5. Capture Genie Space ID (save this for app deployment)
+# MAGIC 
+# MAGIC ## Output
+# MAGIC The notebook will output a **Genie Space ID** - save this value for use in the Vantage RWE application deployment.
+# MAGIC 
+# MAGIC For more details, see: [Genie Setup Guide](./docs/GENIE_SETUP.md)
 
 # COMMAND ----------
 

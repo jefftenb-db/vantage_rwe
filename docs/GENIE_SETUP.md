@@ -9,33 +9,71 @@ Databricks Genie is an AI-powered conversational interface that allows you to as
 ## Prerequisites
 
 - Databricks workspace with Genie enabled
-- Access to create or use Genie Spaces
-- Personal Access Token with appropriate permissions
+- OMOP CDM data loaded in a catalog and schema
+- SQL Warehouse running
+- Access to create Genie Spaces
 
-## Step 1: Find or Create a Genie Space
+## Step 1: Create Genie Space (Automated - Recommended)
 
-### Finding Your Genie Space
+The easiest way to create a Genie Space is using the provided automation notebook.
 
-1. Log into your Databricks workspace
-2. Click on **Genie** in the left sidebar (or go to `/genie` in your workspace URL)
-3. You'll see a list of available Genie Spaces
+### Using the create_genie_space.py Notebook
+
+This notebook automatically creates a Genie Space optimized for OMOP CDM with:
+- Pre-configured OMOP tables (person, condition_occurrence, drug_exposure, provider, concept, etc.)
+- OMOP-specific instructions and best practices
+- Example queries for pharmaceutical analytics
+- Optimized join specifications
+
+**Steps:**
+
+1. **Upload the notebook** to Databricks:
+   - Go to **Workspace** in Databricks
+   - Navigate to your desired folder
+   - Upload `create_genie_space.py` as a notebook
+
+2. **Open and run the notebook**:
+   - Open the `create_genie_space` notebook
+   - Follow the step-by-step instructions:
+     - **Step 1**: Install databricks-sdk and restart Python
+     - **Step 2**: Create widget parameters
+     - **Step 3**: Update widget values with YOUR configuration:
+       - `catalog_name`: Your OMOP catalog (e.g., `vantage_rwe`)
+       - `schema_name`: Your OMOP schema (e.g., `omop`)
+       - `warehouse_id`: Your SQL Warehouse ID
+     - **Step 4**: Run the Genie Space creation cell
+     - **Step 5**: Capture the Genie Space ID from the output
+
+3. **Save the Genie Space ID**:
+   ```
+   Genie Space ID: 
+   01abc234-5678-90de-f123-456789abcdef
+   ```
+   Copy this ID - you'll need it for configuring Vantage RWE.
+
+**Note:** The notebook creates a Genie Space named "Vantage RWE Space2" with pre-optimized OMOP configurations. You can modify the `GENIE_TITLE` variable in the notebook if you want a different name.
+
+## Step 1 (Alternative): Create Genie Space Manually
+
+If you prefer to create the Genie Space manually through the UI:
 
 ### Creating a New Genie Space
 
-If you need to create a new Genie Space:
-
-1. Go to **Genie** in your workspace
+1. Go to **Genie** in your Databricks workspace
 2. Click **Create Space** (or **New Space**)
 3. Configure the space:
-   - **Name**: "OMOP CDM Space" (or similar)
+   - **Name**: "Vantage RWE OMOP Space" (or similar)
    - **Description**: "Natural language queries for OMOP clinical data"
-   - **Catalog/Schema**: Select your OMOP catalog and schema (e.g., `hive_metastore.omop_cdm`)
-   - **Tables**: Include all OMOP tables you want to query
+   - **Catalog/Schema**: Select your OMOP catalog and schema (e.g., `vantage_rwe.omop`)
+   - **Tables**: Include all OMOP tables (person, condition_occurrence, drug_exposure, etc.)
+   - **SQL Warehouse**: Select your warehouse
 4. Click **Create**
+
+**Note:** Manual creation won't include the OMOP-specific instructions and optimizations. The automated notebook is strongly recommended.
 
 ### Getting the Genie Space ID
 
-Once you have a Genie Space:
+Once you have a Genie Space (created either way):
 
 1. Open the Genie Space
 2. Look at the URL in your browser:
